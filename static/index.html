@@ -19,6 +19,61 @@
         --safe: #2f8f74;
         --info: #1f7ba8;
         --card: rgba(255, 252, 244, 0.9);
+        --radius-xl: 20px;
+        --radius-lg: 18px;
+        --radius-md: 12px;
+        --panel-shadow: 0 9px 22px rgba(90, 70, 40, .1);
+      }
+
+      body[data-theme="swiss"] {
+        --paper: #f8fafb;
+        --paper-2: #eef3f6;
+        --ink: #101417;
+        --muted: #556068;
+        --line: #cad6de;
+        --signal: #1161ff;
+        --signal-dark: #0a3e9e;
+        --safe: #1e8a5d;
+        --info: #0c7898;
+        --card: rgba(255, 255, 255, 0.92);
+        --radius-xl: 8px;
+        --radius-lg: 8px;
+        --radius-md: 6px;
+        --panel-shadow: 0 6px 14px rgba(25, 44, 64, .08);
+      }
+
+      body[data-theme="brutalist"] {
+        --paper: #fdf6eb;
+        --paper-2: #f7e8d6;
+        --ink: #111;
+        --muted: #3c3c3c;
+        --line: #111;
+        --signal: #ff4d00;
+        --signal-dark: #8f2600;
+        --safe: #0a8d47;
+        --info: #004dcb;
+        --card: rgba(255, 246, 231, 0.95);
+        --radius-xl: 0px;
+        --radius-lg: 0px;
+        --radius-md: 0px;
+        --panel-shadow: 8px 8px 0 #111;
+      }
+
+      body[data-theme="gov"] {
+        --paper: #eef1f5;
+        --paper-2: #dde3ea;
+        --ink: #1f2733;
+        --muted: #5f6c7f;
+        --line: #b3c0d3;
+        --signal: #b0322c;
+        --signal-dark: #6d1f1b;
+        --safe: #2f6a4f;
+        --info: #365d8e;
+        --card: rgba(250, 252, 255, 0.96);
+        --radius-xl: 10px;
+        --radius-lg: 10px;
+        --radius-md: 8px;
+        --panel-shadow: 0 10px 20px rgba(44, 58, 78, .12);
       }
 
       * { box-sizing: border-box; }
@@ -44,7 +99,7 @@
 
       .masthead {
         border: 1px solid var(--line);
-        border-radius: 20px;
+        border-radius: var(--radius-xl);
         overflow: hidden;
         background: linear-gradient(110deg, rgba(255,255,255,.7), rgba(255,247,231,.7));
         box-shadow: 0 15px 34px rgba(103, 74, 35, .12);
@@ -61,6 +116,7 @@
         font-size: .74rem;
         letter-spacing: .05em;
         text-transform: uppercase;
+        align-items: center;
       }
 
       .tag {
@@ -73,6 +129,34 @@
       .tag.hot {
         border-color: rgba(228, 90, 45, .5);
         color: var(--signal-dark);
+      }
+
+      .theme-switch {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .theme-label {
+        font-size: .72rem;
+        opacity: .75;
+      }
+
+      .theme-btn {
+        border: 1px solid rgba(31, 42, 46, .25);
+        background: rgba(255,255,255,.6);
+        color: #203036;
+        border-radius: 999px;
+        padding: 3px 8px;
+        font-size: .7rem;
+        font-family: "IBM Plex Mono", monospace;
+        cursor: pointer;
+      }
+
+      .theme-btn.active {
+        border-color: rgba(31, 42, 46, .65);
+        font-weight: 700;
       }
 
       .masthead-body {
@@ -108,9 +192,9 @@
 
       .panel {
         border: 1px solid var(--line);
-        border-radius: 18px;
+        border-radius: var(--radius-lg);
         background: var(--card);
-        box-shadow: 0 9px 22px rgba(90, 70, 40, .1);
+        box-shadow: var(--panel-shadow);
         overflow: hidden;
       }
 
@@ -152,7 +236,7 @@
 
       input, textarea, select, button {
         width: 100%;
-        border-radius: 12px;
+        border-radius: var(--radius-md);
         border: 1px solid #cdbb9c;
         padding: 10px 11px;
         font-size: .94rem;
@@ -245,7 +329,7 @@
       .info-card {
         border: 1px solid var(--line);
         border-left: 4px solid var(--signal);
-        border-radius: 12px;
+        border-radius: var(--radius-md);
         background: rgba(255, 252, 245, .85);
         padding: 10px 11px;
       }
@@ -271,7 +355,7 @@
       pre {
         margin: 0;
         border: 1px dashed #cdb38e;
-        border-radius: 12px;
+        border-radius: var(--radius-md);
         background: rgba(255, 248, 236, .92);
         padding: 9px 10px;
         white-space: pre-wrap;
@@ -290,7 +374,7 @@
 
       .outbox-item {
         border: 1px solid #ccb38f;
-        border-radius: 12px;
+        border-radius: var(--radius-md);
         background: rgba(255, 247, 231, .9);
         padding: 9px 10px;
       }
@@ -311,13 +395,20 @@
       .status-failed { background: #ffe0dc; color: #8e2e25; border: 1px solid #db8c82; }
     </style>
   </head>
-  <body>
+  <body data-theme="field">
     <main class="board">
       <section class="masthead">
         <div class="masthead-top">
           <span class="tag hot">Disaster Ops</span>
           <span class="tag">Gemma Command</span>
           <span class="tag">Store + Forward Messaging</span>
+          <div class="theme-switch">
+            <span class="theme-label">UI MODE</span>
+            <button class="theme-btn active" type="button" data-theme-btn="field">Field</button>
+            <button class="theme-btn" type="button" data-theme-btn="swiss">Swiss</button>
+            <button class="theme-btn" type="button" data-theme-btn="brutalist">Brutalist</button>
+            <button class="theme-btn" type="button" data-theme-btn="gov">Gov</button>
+          </div>
         </div>
         <div class="masthead-body">
           <h1>RescueLoop Field Command Board</h1>
@@ -434,6 +525,8 @@
       const outboxList = document.getElementById("outbox");
       const connectivityReady = document.getElementById("connectivityReady");
       const OUTBOX_KEY = "rescueloop_outbox_v1";
+      const THEME_KEY = "rescueloop_theme_v1";
+      const themeButtons = Array.from(document.querySelectorAll("[data-theme-btn]"));
 
       const setList = (id, items) => {
         const ul = document.getElementById(id);
@@ -458,6 +551,20 @@
 
       const writeOutbox = (items) => {
         localStorage.setItem(OUTBOX_KEY, JSON.stringify(items));
+      };
+
+      const setTheme = (theme) => {
+        document.body.setAttribute("data-theme", theme);
+        localStorage.setItem(THEME_KEY, theme);
+        themeButtons.forEach((btn) => {
+          const active = btn.dataset.themeBtn === theme;
+          btn.classList.toggle("active", active);
+        });
+      };
+
+      const loadTheme = () => {
+        const saved = localStorage.getItem(THEME_KEY) || "field";
+        setTheme(saved);
       };
 
       const statusClass = (state) => {
@@ -638,6 +745,11 @@
         smsStatus.textContent = "Sent messages cleared from outbox.";
       });
 
+      themeButtons.forEach((btn) => {
+        btn.addEventListener("click", () => setTheme(btn.dataset.themeBtn));
+      });
+
+      loadTheme();
       renderOutbox();
     </script>
   </body>
