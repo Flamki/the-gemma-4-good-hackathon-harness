@@ -1,0 +1,12 @@
+services:
+  rescueloop:
+    build: .
+    container_name: rescueloop
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - OLLAMA_MODEL=gemma3
+      - REQUEST_TIMEOUT_SECONDS=60
+    restart: unless-stopped

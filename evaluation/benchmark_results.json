@@ -1,0 +1,88 @@
+{
+  "summary": {
+    "scenario_count": 5,
+    "success_count": 5,
+    "avg_coverage_score": 100,
+    "mode_breakdown": {
+      "ollama": 0,
+      "fallback": 5
+    }
+  },
+  "results": [
+    {
+      "id": "flood-elderly-low-connectivity",
+      "status_code": 200,
+      "metrics": {
+        "coverage_score": 100,
+        "first_actions": 5,
+        "next_actions": 4,
+        "do_not_count": 3,
+        "mode": "fallback",
+        "hazard": "flood",
+        "severity": "low",
+        "escalation_level": "urgent"
+      },
+      "summary": "Flood risk assessed as low. Follow immediate safety actions and coordinate local help."
+    },
+    {
+      "id": "cyclone-medical-needs",
+      "status_code": 200,
+      "metrics": {
+        "coverage_score": 100,
+        "first_actions": 5,
+        "next_actions": 4,
+        "do_not_count": 3,
+        "mode": "fallback",
+        "hazard": "cyclone",
+        "severity": "low",
+        "escalation_level": "urgent"
+      },
+      "summary": "Cyclone risk assessed as low. Follow immediate safety actions and coordinate local help."
+    },
+    {
+      "id": "heatwave-slum-settlement",
+      "status_code": 200,
+      "metrics": {
+        "coverage_score": 100,
+        "first_actions": 5,
+        "next_actions": 4,
+        "do_not_count": 3,
+        "mode": "fallback",
+        "hazard": "heatwave",
+        "severity": "low",
+        "escalation_level": "monitor"
+      },
+      "summary": "Heatwave risk assessed as low. Follow immediate safety actions and coordinate local help."
+    },
+    {
+      "id": "earthquake-aftershock",
+      "status_code": 200,
+      "metrics": {
+        "coverage_score": 100,
+        "first_actions": 5,
+        "next_actions": 4,
+        "do_not_count": 3,
+        "mode": "fallback",
+        "hazard": "earthquake",
+        "severity": "low",
+        "escalation_level": "monitor"
+      },
+      "summary": "Earthquake risk assessed as low. Follow immediate safety actions and coordinate local help."
+    },
+    {
+      "id": "wildfire-smoke-risk",
+      "status_code": 200,
+      "metrics": {
+        "coverage_score": 100,
+        "first_actions": 5,
+        "next_actions": 4,
+        "do_not_count": 3,
+        "mode": "fallback",
+        "hazard": "fire",
+        "severity": "low",
+        "escalation_level": "urgent"
+      },
+      "summary": "Fire risk assessed as low. Follow immediate safety actions and coordinate local help."
+    }
+  ]
+}

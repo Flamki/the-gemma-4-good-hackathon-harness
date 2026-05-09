@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RescueLoop - Offline Disaster Copilot</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: #111827;
+        --muted: #9ca3af;
+        --text: #f9fafb;
+        --accent: #22c55e;
+        --danger: #ef4444;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: radial-gradient(circle at 20% 10%, #1e293b, #0b1020 45%, #05070f);
+        color: var(--text);
+        min-height: 100vh;
+      }
+      .wrap {
+        width: min(1100px, 92vw);
+        margin: 28px auto;
+        display: grid;
+        gap: 18px;
+      }
+      .hero, .card {
+        background: linear-gradient(180deg, rgba(17,24,39,.92), rgba(3,7,18,.92));
+        border: 1px solid rgba(148,163,184,.2);
+        border-radius: 14px;
+        padding: 18px;
+      }
+      .hero h1 { margin: 0 0 8px; font-size: clamp(1.3rem, 3vw, 2rem); }
+      .hero p { margin: 0; color: var(--muted); }
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+      @media (min-width: 900px) {
+        .grid { grid-template-columns: 1fr 1fr; }
+      }
+      label {
+        display: block;
+        font-size: .9rem;
+        margin: 12px 0 6px;
+        color: #d1d5db;
+      }
+      input, textarea, select, button {
+        width: 100%;
+        border-radius: 10px;
+        border: 1px solid #334155;
+        background: #0b1220;
+        color: var(--text);
+        padding: 10px 12px;
+        font-size: .95rem;
+      }
+      textarea { min-height: 120px; resize: vertical; }
+      button {
+        cursor: pointer;
+        background: linear-gradient(90deg, #16a34a, #22c55e);
+        border: none;
+        margin-top: 12px;
+        font-weight: 600;
+      }
+      .btn-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 8px;
+      }
+      .btn-row button {
+        margin-top: 0;
+      }
+      .btn-secondary {
+        background: #0b1220;
+        border: 1px solid #334155;
+      }
+      button:disabled { opacity: .7; cursor: not-allowed; }
+      .pill {
+        display: inline-block;
+        margin-right: 8px;
+        margin-top: 8px;
+        background: rgba(34,197,94,.12);
+        color: #86efac;
+        border: 1px solid rgba(34,197,94,.3);
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: .8rem;
+      }
+      .muted { color: var(--muted); }
+      .danger { color: #fca5a5; }
+      .section-title {
+        margin: 18px 0 10px;
+        color: #bfdbfe;
+        font-size: 1rem;
+      }
+      ul { margin: 8px 0 14px 20px; }
+      pre {
+        background: #030712;
+        border: 1px solid #1f2937;
+        border-radius: 10px;
+        padding: 10px;
+        white-space: pre-wrap;
+      }
+      .outbox-list {
+        list-style: none;
+        margin: 6px 0 0;
+        padding: 0;
+        display: grid;
+        gap: 8px;
+      }
+      .outbox-item {
+        border: 1px solid #1f2937;
+        border-radius: 10px;
+        padding: 10px;
+        background: #030712;
+      }
+      .status-tag {
+        display: inline-block;
+        margin-bottom: 6px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: .75rem;
+        border: 1px solid #334155;
+      }
+      .status-queued {
+        color: #fcd34d;
+        border-color: #92400e;
+        background: rgba(146, 64, 14, 0.2);
+      }
+      .status-sending {
+        color: #93c5fd;
+        border-color: #1d4ed8;
+        background: rgba(29, 78, 216, 0.2);
+      }
+      .status-sent {
+        color: #86efac;
+        border-color: #15803d;
+        background: rgba(21, 128, 61, 0.2);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="hero">
+        <h1>RescueLoop: Offline Disaster Response Copilot</h1>
+        <p>
+          Gemma-powered local-first assistant for emergency action planning,
+          volunteer message drafting, and multilingual response support.
+        </p>
+      </section>
+
+      <section class="grid">
+        <div class="card">
+          <h2 style="margin-top:0;">Incident Input</h2>
+          <label for="incident">Incident details</label>
+          <textarea id="incident">Heavy rain since morning, river overflow likely, 2 elderly people at home, no reliable internet.</textarea>
+
+          <label for="location">Location</label>
+          <input id="location" value="Ward 8, Riverside Town" />
+
+          <label for="language">Output language preference</label>
+          <select id="language">
+            <option>English</option>
+            <option>Hindi</option>
+            <option>Bengali</option>
+            <option>Tamil</option>
+            <option>Marathi</option>
+          </select>
+
+          <label for="constraints">Constraints (optional)</label>
+          <input id="constraints" value="Power cuts expected; only SMS works intermittently." />
+
+          <button id="run">Generate Response Plan</button>
+          <p class="muted" id="status">Ready.</p>
+        </div>
+
+        <div class="card">
+          <h2 style="margin-top:0;">Plan Output</h2>
+          <div id="meta"></div>
+          <p id="summary" class="muted">Run the planner to generate output.</p>
+          <p id="confidence" class="muted"></p>
+
+          <h3 class="section-title">First 15 minutes</h3>
+          <ul id="first15"></ul>
+
+          <h3 class="section-title">Next 24 hours</h3>
+          <ul id="next24"></ul>
+
+          <h3 class="section-title">Do not</h3>
+          <ul id="donot"></ul>
+
+          <h3 class="section-title">Volunteer SMS</h3>
+          <pre id="sms">-</pre>
+          <div class="btn-row">
+            <button id="copySms" class="btn-secondary">Copy SMS Draft</button>
+            <button id="queueSms" class="btn-secondary">Queue In Outbox</button>
+          </div>
+          <p id="deliveryNote" class="muted"></p>
+          <p id="smsStatus" class="muted"></p>
+
+          <h3 class="section-title">Sources</h3>
+          <ul id="sources"></ul>
+
+          <h3 class="section-title">Resource Handoff Packet</h3>
+          <pre id="resources">-</pre>
+
+          <h3 class="section-title">Outbox (Store-and-Forward)</h3>
+          <div class="btn-row">
+            <button id="sendQueued" class="btn-secondary">Try Send Queued</button>
+            <button id="clearSent" class="btn-secondary">Clear Sent</button>
+          </div>
+          <label for="connectivityReady">Connectivity available</label>
+          <select id="connectivityReady">
+            <option value="no">No (stay queued)</option>
+            <option value="yes">Yes (simulate sending)</option>
+          </select>
+          <ul id="outbox" class="outbox-list"></ul>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const runBtn = document.getElementById("run");
+      const status = document.getElementById("status");
+      const copySmsBtn = document.getElementById("copySms");
+      const queueSmsBtn = document.getElementById("queueSms");
+      const sendQueuedBtn = document.getElementById("sendQueued");
+      const clearSentBtn = document.getElementById("clearSent");
+      const smsStatus = document.getElementById("smsStatus");
+      const outboxList = document.getElementById("outbox");
+      const connectivityReady = document.getElementById("connectivityReady");
+      const OUTBOX_KEY = "rescueloop_outbox_v1";
+
+      const setList = (id, items) => {
+        const ul = document.getElementById(id);
+        ul.innerHTML = "";
+        (items || []).forEach((item) => {
+          const li = document.createElement("li");
+          li.textContent = item;
+          ul.appendChild(li);
+        });
+      };
+
+      const readOutbox = () => {
+        try {
+          const raw = localStorage.getItem(OUTBOX_KEY);
+          if (!raw) return [];
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      };
+
+      const writeOutbox = (items) => {
+        localStorage.setItem(OUTBOX_KEY, JSON.stringify(items));
+      };
+
+      const statusClass = (state) => {
+        if (state === "sent") return "status-sent";
+        if (state === "sending") return "status-sending";
+        return "status-queued";
+      };
+
+      const renderOutbox = () => {
+        const items = readOutbox();
+        outboxList.innerHTML = "";
+        if (!items.length) {
+          const li = document.createElement("li");
+          li.className = "outbox-item muted";
+          li.textContent = "Outbox empty.";
+          outboxList.appendChild(li);
+          return;
+        }
+        items.forEach((item, idx) => {
+          const li = document.createElement("li");
+          li.className = "outbox-item";
+          li.innerHTML = `
+            <span class="status-tag ${statusClass(item.status)}">${item.status}</span>
+            <div><strong>${item.hazard || "general"}</strong> - ${item.location || "unknown location"}</div>
+            <div class="muted" style="margin-top:6px;">${item.message || "-"}</div>
+            <div class="muted" style="margin-top:6px;font-size:.8rem;">#${idx + 1} | ${item.createdAt || ""}</div>
+          `;
+          outboxList.appendChild(li);
+        });
+      };
+
+      runBtn.addEventListener("click", async () => {
+        runBtn.disabled = true;
+        status.textContent = "Generating plan...";
+
+        try {
+          const payload = {
+            incident: document.getElementById("incident").value,
+            location: document.getElementById("location").value,
+            language: document.getElementById("language").value,
+            constraints: document.getElementById("constraints").value
+          };
+
+          const res = await fetch("/api/plan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          if (!res.ok) {
+            throw new Error("Planner request failed");
+          }
+
+          const data = await res.json();
+          document.getElementById("meta").innerHTML =
+            `<span class="pill">Mode: ${data.mode}</span>` +
+            `<span class="pill">Hazard: ${data.hazard}</span>` +
+            `<span class="pill">Severity: ${data.severity}</span>` +
+            `<span class="pill">Escalation: ${data.escalation_level}</span>`;
+          document.getElementById("summary").textContent = data.summary || "";
+          document.getElementById("confidence").textContent = data.confidence_note || "";
+          document.getElementById("sms").textContent = data.sms_alert || "-";
+          document.getElementById("deliveryNote").textContent = data.message_delivery_note || "";
+          document.getElementById("resources").textContent = JSON.stringify(data.resource_packet || {}, null, 2);
+          setList("first15", data.first_15_min);
+          setList("next24", data.next_24h);
+          setList("donot", data.do_not);
+          setList("sources", data.sources);
+          smsStatus.textContent = "";
+          status.textContent = "Plan generated.";
+        } catch (err) {
+          status.innerHTML = `<span class="danger">Error: ${err.message}</span>`;
+        } finally {
+          runBtn.disabled = false;
+        }
+      });
+
+      copySmsBtn.addEventListener("click", async () => {
+        const sms = document.getElementById("sms").textContent.trim();
+        if (!sms || sms === "-") {
+          smsStatus.textContent = "No SMS draft to copy yet.";
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(sms);
+          smsStatus.textContent = "SMS draft copied to clipboard.";
+        } catch {
+          smsStatus.textContent = "Clipboard access blocked. You can still copy manually.";
+        }
+      });
+
+      queueSmsBtn.addEventListener("click", () => {
+        const sms = document.getElementById("sms").textContent.trim();
+        if (!sms || sms === "-") {
+          smsStatus.textContent = "Generate a plan first, then queue the SMS draft.";
+          return;
+        }
+        const outbox = readOutbox();
+        const metaText = document.getElementById("meta").textContent || "";
+        const hazard = /Hazard:\s*([A-Za-z]+)/.exec(metaText)?.[1]?.toLowerCase() || "general";
+        const location = document.getElementById("location").value || "unknown location";
+        outbox.push({
+          status: "queued",
+          hazard,
+          location,
+          message: sms,
+          createdAt: new Date().toLocaleString()
+        });
+        writeOutbox(outbox);
+        renderOutbox();
+        smsStatus.textContent = "Queued in outbox. It can be sent when connectivity is available.";
+      });
+
+      sendQueuedBtn.addEventListener("click", () => {
+        const allowSend = connectivityReady.value === "yes";
+        const outbox = readOutbox();
+        if (!outbox.length) {
+          smsStatus.textContent = "Outbox is empty.";
+          return;
+        }
+        if (!allowSend) {
+          smsStatus.textContent = "Connectivity set to No. Messages remain queued.";
+          return;
+        }
+        const updated = outbox.map((item) => {
+          if (item.status === "queued") {
+            return { ...item, status: "sending" };
+          }
+          return item;
+        });
+        writeOutbox(updated);
+        renderOutbox();
+        setTimeout(() => {
+          const sent = readOutbox().map((item) => {
+            if (item.status === "sending") {
+              return { ...item, status: "sent" };
+            }
+            return item;
+          });
+          writeOutbox(sent);
+          renderOutbox();
+          smsStatus.textContent = "Queued messages marked as sent (simulated delivery).";
+        }, 900);
+      });
+
+      clearSentBtn.addEventListener("click", () => {
+        const remaining = readOutbox().filter((item) => item.status !== "sent");
+        writeOutbox(remaining);
+        renderOutbox();
+        smsStatus.textContent = "Sent messages cleared from outbox.";
+      });
+
+      renderOutbox();
+    </script>
+  </body>
+</html>

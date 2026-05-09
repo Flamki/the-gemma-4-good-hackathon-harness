@@ -1,0 +1,37 @@
+[
+  {
+    "id": "flood-elderly-low-connectivity",
+    "incident": "River water is rising near houses, two elderly people in one home, mobile internet unstable, rain expected all night.",
+    "location": "Ward 8 Riverside Town",
+    "language": "English",
+    "constraints": "Power cuts likely; only SMS connectivity is intermittent."
+  },
+  {
+    "id": "cyclone-medical-needs",
+    "incident": "Cyclone warning issued, one child has asthma, high winds expected within 6 hours, roads may close.",
+    "location": "Coastal Block A",
+    "language": "English",
+    "constraints": "Family has one inhaler and limited transport."
+  },
+  {
+    "id": "heatwave-slum-settlement",
+    "incident": "Severe heatwave, multiple residents dizzy, no reliable daytime electricity, limited clean water supply.",
+    "location": "Sector 3 Informal Settlement",
+    "language": "Hindi",
+    "constraints": "No cooling center nearby."
+  },
+  {
+    "id": "earthquake-aftershock",
+    "incident": "Strong tremor felt, minor wall cracks seen, people panicking about aftershocks, one blocked alley.",
+    "location": "Old Town Zone 2",
+    "language": "English",
+    "constraints": "Two-story buildings and narrow exits."
+  },
+  {
+    "id": "wildfire-smoke-risk",
+    "incident": "Nearby wildfire causing dense smoke, elderly residents coughing, evacuation instructions unclear.",
+    "location": "Hill District North",
+    "language": "English",
+    "constraints": "No private vehicle available."
+  }
+]

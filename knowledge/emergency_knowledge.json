@@ -1,0 +1,38 @@
+[
+  {
+    "title": "Flood Immediate Safety",
+    "source": "Red Cross guidance summary",
+    "hazard": "flood",
+    "content": "Move to higher ground. Avoid flood water because it can hide debris and electrical risks. Use safe drinking water from sealed sources."
+  },
+  {
+    "title": "Cyclone Shelter Protocol",
+    "source": "Community preparedness handbook",
+    "hazard": "cyclone",
+    "content": "Stay indoors in a reinforced room away from windows. Keep emergency kit, battery radio, medicines, and identification ready."
+  },
+  {
+    "title": "Earthquake Aftershock Advice",
+    "source": "Emergency management training notes",
+    "hazard": "earthquake",
+    "content": "After shaking stops, evacuate unsafe structures, check for injuries, and prepare for aftershocks. Avoid open flames until gas leaks are ruled out."
+  },
+  {
+    "title": "Heatwave Vulnerable Group Care",
+    "source": "Public health bulletin summary",
+    "hazard": "heatwave",
+    "content": "Hydrate frequently, prioritize elderly and children, reduce outdoor activity at peak heat, and identify signs of heat exhaustion early."
+  },
+  {
+    "title": "Wildfire Smoke Protection",
+    "source": "Air quality emergency notes",
+    "hazard": "fire",
+    "content": "Limit outdoor exposure, use masks if available, close windows, and monitor respiratory symptoms. Evacuate early when official alerts escalate."
+  },
+  {
+    "title": "General Emergency Comms",
+    "source": "Local volunteer operations playbook",
+    "hazard": "general",
+    "content": "When communication is unstable, use short structured messages: location, people count, injuries, urgent needs, and accessibility constraints."
+  }
+]
