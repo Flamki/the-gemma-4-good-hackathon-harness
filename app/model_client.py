@@ -143,7 +143,6 @@ class HuggingFaceRouterClient:
                 {"role": "user", "content": user_prompt},
             ],
             "temperature": 0.2,
-            "response_format": {"type": "json_object"},
         }
         try:
             response = requests.post(

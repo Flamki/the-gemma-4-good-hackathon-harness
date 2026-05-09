@@ -339,7 +339,7 @@ def generate_plan(request: PlanRequest) -> PlanResponse:
         tools=_tool_schemas(),
     )
 
-    if result.mode != "ollama" or not result.content:
+    if result.mode not in {"ollama", "hf_router"} or not result.content:
         return _fallback_plan(
             incident=request.incident,
             location=request.location,
