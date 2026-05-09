@@ -193,8 +193,8 @@
           <h3 class="section-title">Do not</h3>
           <ul id="donot"></ul>
 
-          <h3 class="section-title">Volunteer SMS</h3>
-          <pre id="sms">-</pre>
+          <h3 class="section-title">Volunteer SMS Draft (Editable)</h3>
+          <textarea id="sms" placeholder="Type or edit SMS draft here..."></textarea>
           <div class="btn-row">
             <button id="copySms" class="btn-secondary">Copy SMS Draft</button>
             <button id="queueSms" class="btn-secondary">Queue In Outbox</button>
@@ -319,7 +319,7 @@
             `<span class="pill">Escalation: ${data.escalation_level}</span>`;
           document.getElementById("summary").textContent = data.summary || "";
           document.getElementById("confidence").textContent = data.confidence_note || "";
-          document.getElementById("sms").textContent = data.sms_alert || "-";
+          document.getElementById("sms").value = data.sms_alert || "";
           document.getElementById("deliveryNote").textContent = data.message_delivery_note || "";
           document.getElementById("resources").textContent = JSON.stringify(data.resource_packet || {}, null, 2);
           setList("first15", data.first_15_min);
@@ -336,8 +336,8 @@
       });
 
       copySmsBtn.addEventListener("click", async () => {
-        const sms = document.getElementById("sms").textContent.trim();
-        if (!sms || sms === "-") {
+        const sms = document.getElementById("sms").value.trim();
+        if (!sms) {
           smsStatus.textContent = "No SMS draft to copy yet.";
           return;
         }
@@ -350,9 +350,9 @@
       });
 
       queueSmsBtn.addEventListener("click", () => {
-        const sms = document.getElementById("sms").textContent.trim();
-        if (!sms || sms === "-") {
-          smsStatus.textContent = "Generate a plan first, then queue the SMS draft.";
+        const sms = document.getElementById("sms").value.trim();
+        if (!sms) {
+          smsStatus.textContent = "Type or generate an SMS draft first, then queue it.";
           return;
         }
         const outbox = readOutbox();
