@@ -3,383 +3,421 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>RescueLoop - Disaster Coordination Console</title>
+    <title>RescueLoop - Field Command Board</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;700;800&family=Manrope:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
       :root {
-        --bg: #081b22;
-        --bg-2: #112f39;
-        --panel: rgba(9, 26, 33, 0.82);
-        --panel-2: rgba(13, 35, 45, 0.9);
-        --line: rgba(139, 193, 187, 0.28);
-        --text: #e5f7f1;
-        --muted: #94b8b0;
-        --accent: #27d6a1;
-        --accent-2: #0db4ff;
-        --warn: #fdbb61;
-        --danger: #ff8181;
+        --paper: #f6f0e3;
+        --paper-2: #efe5d3;
+        --ink: #1f2a2e;
+        --muted: #56656a;
+        --line: #cfbfa3;
+        --signal: #e45a2d;
+        --signal-dark: #a33615;
+        --safe: #2f8f74;
+        --info: #1f7ba8;
+        --card: rgba(255, 252, 244, 0.9);
       }
 
       * { box-sizing: border-box; }
 
       body {
         margin: 0;
+        color: var(--ink);
+        font-family: "Manrope", "Segoe UI", sans-serif;
         min-height: 100vh;
-        color: var(--text);
-        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
         background:
-          radial-gradient(circle at 8% 12%, rgba(39, 214, 161, 0.21), transparent 30%),
-          radial-gradient(circle at 90% 18%, rgba(13, 180, 255, 0.2), transparent 35%),
-          linear-gradient(130deg, var(--bg), var(--bg-2));
+          radial-gradient(circle at 15% 10%, rgba(228, 90, 45, .16), transparent 26%),
+          radial-gradient(circle at 85% 16%, rgba(47, 143, 116, .16), transparent 24%),
+          repeating-linear-gradient(120deg, rgba(31, 42, 46, .035) 0 2px, transparent 2px 14px),
+          linear-gradient(170deg, var(--paper), var(--paper-2));
       }
 
-      .noise {
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        opacity: .08;
-        background-image:
-          linear-gradient(transparent 96%, rgba(180, 239, 229, .18) 100%),
-          linear-gradient(90deg, transparent 96%, rgba(180, 239, 229, .08) 100%);
-        background-size: 100% 4px, 4px 100%;
-      }
-
-      .shell {
+      .board {
         width: min(1220px, 94vw);
-        margin: 20px auto 32px;
+        margin: 16px auto 28px;
         display: grid;
-        gap: 16px;
+        gap: 14px;
       }
 
-      .hero {
+      .masthead {
         border: 1px solid var(--line);
-        border-radius: 18px;
-        padding: 18px 20px;
-        background: linear-gradient(150deg, rgba(12, 36, 46, .88), rgba(7, 20, 26, .92));
-        box-shadow: 0 18px 50px rgba(0, 0, 0, .28);
-        animation: rise .55s ease;
+        border-radius: 20px;
+        overflow: hidden;
+        background: linear-gradient(110deg, rgba(255,255,255,.7), rgba(255,247,231,.7));
+        box-shadow: 0 15px 34px rgba(103, 74, 35, .12);
       }
 
-      .kicker {
-        display: inline-flex;
-        align-items: center;
+      .masthead-top {
+        display: flex;
+        flex-wrap: wrap;
         gap: 8px;
-        margin-bottom: 8px;
-        padding: 4px 10px;
-        border: 1px solid rgba(39, 214, 161, 0.4);
-        border-radius: 999px;
-        font-size: .74rem;
-        letter-spacing: .07em;
-        text-transform: uppercase;
-        color: #9af7df;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 244, 222, .9);
         font-family: "IBM Plex Mono", monospace;
+        font-size: .74rem;
+        letter-spacing: .05em;
+        text-transform: uppercase;
       }
 
-      .hero h1 {
+      .tag {
+        border: 1px solid rgba(31, 42, 46, .25);
+        border-radius: 999px;
+        padding: 3px 10px;
+        background: rgba(255,255,255,.65);
+      }
+
+      .tag.hot {
+        border-color: rgba(228, 90, 45, .5);
+        color: var(--signal-dark);
+      }
+
+      .masthead-body {
+        padding: 18px 16px 20px;
+      }
+
+      .masthead h1 {
         margin: 0;
-        font-family: "Space Grotesk", sans-serif;
-        font-size: clamp(1.45rem, 4vw, 2.35rem);
-        line-height: 1.08;
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-weight: 800;
+        font-size: clamp(1.6rem, 4vw, 2.65rem);
+        line-height: 1.02;
+        letter-spacing: -.01em;
       }
 
-      .hero p {
-        margin: 9px 0 0;
-        color: #b9d9d2;
-        max-width: 920px;
+      .masthead p {
+        margin: 8px 0 0;
+        max-width: 900px;
+        color: var(--muted);
       }
 
       .layout {
         display: grid;
-        gap: 16px;
+        gap: 14px;
       }
 
       @media (min-width: 980px) {
-        .layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
+        .layout {
+          grid-template-columns: minmax(0, 400px) minmax(0, 1fr);
+          align-items: start;
+        }
       }
 
-      .card {
-        background: var(--panel);
+      .panel {
         border: 1px solid var(--line);
         border-radius: 18px;
-        padding: 18px;
-        backdrop-filter: blur(8px);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 14px 34px rgba(0,0,0,.25);
-        animation: rise .7s ease;
+        background: var(--card);
+        box-shadow: 0 9px 22px rgba(90, 70, 40, .1);
+        overflow: hidden;
       }
 
-      .card h2 {
-        margin: 0 0 8px;
-        font-family: "Space Grotesk", sans-serif;
-        font-size: 1.16rem;
+      .panel-head {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 247, 234, .86);
       }
 
-      .subtle {
-        margin: 0 0 14px;
+      .panel-head h2 {
+        margin: 0;
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-size: 1.03rem;
+      }
+
+      .panel-head p {
+        margin: 5px 0 0;
         color: var(--muted);
-        font-size: .92rem;
+        font-size: .88rem;
+      }
+
+      .panel-body {
+        padding: 13px 14px 15px;
+      }
+
+      @media (min-width: 980px) {
+        .panel.sticky { position: sticky; top: 14px; }
       }
 
       label {
         display: block;
-        margin: 11px 0 7px;
-        color: #c6e8df;
-        font-size: .86rem;
-        font-weight: 500;
+        margin: 11px 0 6px;
+        font-size: .84rem;
+        color: #34454a;
+        font-weight: 700;
+        letter-spacing: .02em;
+        text-transform: uppercase;
       }
 
       input, textarea, select, button {
         width: 100%;
         border-radius: 12px;
-        border: 1px solid rgba(141, 194, 188, .28);
-        background: rgba(5, 17, 22, .78);
-        color: var(--text);
-        padding: 11px 12px;
-        font-size: .95rem;
+        border: 1px solid #cdbb9c;
+        padding: 10px 11px;
+        font-size: .94rem;
+        font-family: "Manrope", sans-serif;
+        color: var(--ink);
+        background: rgba(255, 255, 255, .82);
       }
 
-      textarea {
-        min-height: 104px;
-        resize: vertical;
-        line-height: 1.35;
-      }
+      textarea { min-height: 108px; resize: vertical; line-height: 1.35; }
 
       input:focus, textarea:focus, select:focus {
         outline: none;
-        border-color: rgba(39, 214, 161, .75);
-        box-shadow: 0 0 0 2px rgba(39, 214, 161, .22);
+        border-color: var(--signal);
+        box-shadow: 0 0 0 2px rgba(228, 90, 45, .18);
       }
 
       button {
         cursor: pointer;
         border: none;
-        background: linear-gradient(95deg, var(--accent), #00bd8d);
-        color: #042319;
-        font-weight: 700;
+        font-weight: 800;
         letter-spacing: .01em;
-        transition: transform .15s ease, filter .15s ease;
+        background: linear-gradient(95deg, var(--signal), #f07d3a);
+        color: #fff9f4;
+        transition: transform .14s ease, filter .14s ease;
       }
 
-      button:hover { transform: translateY(-1px); filter: brightness(1.05); }
-      button:disabled { opacity: .7; cursor: not-allowed; transform: none; }
+      button:hover { transform: translateY(-1px); filter: saturate(1.06); }
+      button:disabled { opacity: .68; cursor: not-allowed; transform: none; }
 
-      .btn-row {
+      .button-row {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 9px;
+        gap: 8px;
         margin-top: 8px;
       }
 
-      .btn-secondary {
-        background: linear-gradient(95deg, rgba(16, 47, 58, .95), rgba(9, 32, 41, .95));
-        border: 1px solid rgba(137, 190, 184, .34);
-        color: #d8f1eb;
-        font-weight: 600;
+      .btn-muted {
+        background: linear-gradient(100deg, #e8dcc6, #f2e8d5);
+        color: #2b3d43;
+        border: 1px solid #cab89a;
+        font-weight: 700;
       }
 
-      .panel-section {
-        margin-top: 14px;
-        padding-top: 14px;
-        border-top: 1px solid rgba(141, 194, 188, .18);
+      .statusline {
+        min-height: 20px;
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: .87rem;
       }
 
-      .section-title {
-        margin: 0 0 9px;
-        font-size: .96rem;
-        letter-spacing: .02em;
-        color: #b2ece0;
-        font-family: "Space Grotesk", sans-serif;
+      .summary {
+        margin: 0;
+        color: #2a3e44;
       }
 
-      .meta {
+      .meta-wrap {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 7px;
         margin-bottom: 8px;
       }
 
       .pill {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        padding: 5px 9px;
         border-radius: 999px;
-        font-size: .75rem;
-        border: 1px solid rgba(120, 190, 178, .38);
-        background: rgba(18, 54, 64, .72);
-        color: #9ef1de;
+        border: 1px solid #ceb18a;
+        padding: 4px 9px;
         font-family: "IBM Plex Mono", monospace;
+        font-size: .72rem;
+        background: rgba(255, 243, 220, .82);
+        color: #5a3c19;
+        letter-spacing: .01em;
       }
 
-      .muted { color: var(--muted); }
-      .danger { color: var(--danger); }
+      .tiny { font-size: .82rem; color: var(--muted); }
+      .danger { color: #b5332d; }
+
+      .grid-cards {
+        display: grid;
+        gap: 10px;
+      }
+
+      @media (min-width: 760px) {
+        .grid-cards.two {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      .info-card {
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--signal);
+        border-radius: 12px;
+        background: rgba(255, 252, 245, .85);
+        padding: 10px 11px;
+      }
+
+      .info-card.safe { border-left-color: var(--safe); }
+      .info-card.info { border-left-color: var(--info); }
+
+      .info-card h3 {
+        margin: 0 0 6px;
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-size: .96rem;
+      }
 
       ul {
         margin: 0;
-        padding-left: 18px;
+        padding-left: 17px;
         display: grid;
-        gap: 6px;
+        gap: 5px;
       }
 
-      li { color: #d6ede7; }
+      li { color: #2e4046; }
 
       pre {
         margin: 0;
-        padding: 10px;
-        border-radius: 11px;
-        border: 1px solid rgba(120, 186, 178, .24);
-        background: var(--panel-2);
-        color: #bfeee2;
+        border: 1px dashed #cdb38e;
+        border-radius: 12px;
+        background: rgba(255, 248, 236, .92);
+        padding: 9px 10px;
         white-space: pre-wrap;
         font-family: "IBM Plex Mono", monospace;
-        font-size: .86rem;
+        font-size: .84rem;
+        color: #2d3f45;
       }
 
       .outbox-list {
         list-style: none;
-        margin: 8px 0 0;
+        margin: 7px 0 0;
         padding: 0;
         display: grid;
-        gap: 8px;
+        gap: 7px;
       }
 
       .outbox-item {
-        border: 1px solid rgba(128, 182, 177, .24);
-        border-radius: 11px;
-        padding: 10px;
-        background: rgba(11, 31, 39, .86);
+        border: 1px solid #ccb38f;
+        border-radius: 12px;
+        background: rgba(255, 247, 231, .9);
+        padding: 9px 10px;
       }
 
       .status-tag {
         display: inline-block;
         margin-bottom: 5px;
-        padding: 3px 9px;
+        padding: 2px 9px;
         border-radius: 999px;
-        font-size: .72rem;
+        font-size: .69rem;
         text-transform: uppercase;
         letter-spacing: .05em;
         font-family: "IBM Plex Mono", monospace;
       }
-      .status-queued { color: #fbd38d; background: rgba(134, 79, 3, .22); border: 1px solid rgba(194, 124, 24, .45); }
-      .status-sending { color: #8fd8ff; background: rgba(4, 91, 143, .25); border: 1px solid rgba(51, 158, 230, .45); }
-      .status-sent { color: #9af4cf; background: rgba(11, 116, 72, .24); border: 1px solid rgba(42, 180, 125, .45); }
-      .status-failed { color: #ffaaaa; background: rgba(143, 20, 20, .24); border: 1px solid rgba(204, 76, 76, .45); }
-
-      .status-bar {
-        margin-top: 10px;
-        min-height: 20px;
-        font-size: .88rem;
-      }
-
-      .tiny {
-        font-size: .79rem;
-        line-height: 1.45;
-      }
-
-      @keyframes rise {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
+      .status-queued { background: #fff0c9; color: #7b4f00; border: 1px solid #ddbc6f; }
+      .status-sending { background: #dff2ff; color: #1d5f82; border: 1px solid #84bddf; }
+      .status-sent { background: #daf6ea; color: #23684f; border: 1px solid #83c8ad; }
+      .status-failed { background: #ffe0dc; color: #8e2e25; border: 1px solid #db8c82; }
     </style>
   </head>
   <body>
-    <div class="noise"></div>
-    <main class="shell">
-      <section class="hero">
-        <div class="kicker">RescueLoop Console</div>
-        <h1>Emergency Coordination, Built For Low Connectivity</h1>
-        <p>
-          Generate high-priority action plans, draft field-ready SMS updates, and move through a
-          store-and-forward communication workflow without losing clarity under pressure.
-        </p>
+    <main class="board">
+      <section class="masthead">
+        <div class="masthead-top">
+          <span class="tag hot">Disaster Ops</span>
+          <span class="tag">Gemma Command</span>
+          <span class="tag">Store + Forward Messaging</span>
+        </div>
+        <div class="masthead-body">
+          <h1>RescueLoop Field Command Board</h1>
+          <p>Made for unstable networks, urgent decisions, and teams that need a clear action stack before cloud systems catch up.</p>
+        </div>
       </section>
 
       <section class="layout">
-        <section class="card">
-          <h2>Incident Intake</h2>
-          <p class="subtle">Capture a realistic ground report, then run the planner.</p>
+        <section class="panel sticky">
+          <header class="panel-head">
+            <h2>Incident Intake</h2>
+            <p>Enter the situation exactly as it is on the ground.</p>
+          </header>
+          <div class="panel-body">
+            <label for="incident">Incident details</label>
+            <textarea id="incident">Heavy rain since morning, river overflow likely, 2 elderly people at home, no reliable internet.</textarea>
 
-          <label for="incident">Incident details</label>
-          <textarea id="incident">Heavy rain since morning, river overflow likely, 2 elderly people at home, no reliable internet.</textarea>
+            <label for="location">Location</label>
+            <input id="location" value="Ward 8, Riverside Town" />
 
-          <label for="location">Location</label>
-          <input id="location" value="Ward 8, Riverside Town" />
+            <label for="language">Output language</label>
+            <select id="language">
+              <option>English</option>
+              <option>Hindi</option>
+              <option>Bengali</option>
+              <option>Tamil</option>
+              <option>Marathi</option>
+            </select>
 
-          <label for="language">Output language preference</label>
-          <select id="language">
-            <option>English</option>
-            <option>Hindi</option>
-            <option>Bengali</option>
-            <option>Tamil</option>
-            <option>Marathi</option>
-          </select>
+            <label for="constraints">Constraints</label>
+            <input id="constraints" value="Power cuts expected; only SMS works intermittently." />
 
-          <label for="constraints">Constraints</label>
-          <input id="constraints" value="Power cuts expected; only SMS works intermittently." />
-
-          <button id="run">Generate Response Plan</button>
-          <p class="status-bar muted" id="status">Ready.</p>
+            <button id="run">Generate Response Plan</button>
+            <p id="status" class="statusline">Ready.</p>
+          </div>
         </section>
 
-        <section class="card">
-          <h2>Response Operations</h2>
-          <p class="subtle">Review recommended actions and coordinate outbound messaging.</p>
+        <section class="panel">
+          <header class="panel-head">
+            <h2>Response Operations</h2>
+            <p>Action plan, messaging, and queue management in one view.</p>
+          </header>
+          <div class="panel-body">
+            <div id="meta" class="meta-wrap"></div>
+            <p id="summary" class="summary">Run the planner to generate output.</p>
+            <p id="confidence" class="tiny"></p>
 
-          <div id="meta" class="meta"></div>
-          <p id="summary" class="muted">Run the planner to generate output.</p>
-          <p id="confidence" class="tiny muted"></p>
-
-          <div class="panel-section">
-            <h3 class="section-title">First 15 Minutes</h3>
-            <ul id="first15"></ul>
-          </div>
-
-          <div class="panel-section">
-            <h3 class="section-title">Next 24 Hours</h3>
-            <ul id="next24"></ul>
-          </div>
-
-          <div class="panel-section">
-            <h3 class="section-title">Do Not</h3>
-            <ul id="donot"></ul>
-          </div>
-
-          <div class="panel-section">
-            <h3 class="section-title">Volunteer SMS Draft</h3>
-            <textarea id="sms" placeholder="Type or edit SMS draft here..."></textarea>
-            <label for="recipientNumber">Recipient phone (E.164)</label>
-            <input id="recipientNumber" placeholder="+15551234567" />
-            <div class="btn-row">
-              <button id="copySms" class="btn-secondary">Copy Draft</button>
-              <button id="queueSms" class="btn-secondary">Queue Outbox</button>
+            <div class="grid-cards two" style="margin-top:10px;">
+              <article class="info-card">
+                <h3>First 15 Minutes</h3>
+                <ul id="first15"></ul>
+              </article>
+              <article class="info-card safe">
+                <h3>Next 24 Hours</h3>
+                <ul id="next24"></ul>
+              </article>
             </div>
-            <p id="deliveryNote" class="tiny muted"></p>
-            <p id="smsStatus" class="status-bar muted"></p>
-          </div>
 
-          <div class="panel-section">
-            <h3 class="section-title">Source Context</h3>
-            <ul id="sources"></ul>
-          </div>
+            <article class="info-card info" style="margin-top:10px;">
+              <h3>Do Not</h3>
+              <ul id="donot"></ul>
+            </article>
 
-          <div class="panel-section">
-            <h3 class="section-title">Resource Handoff Packet</h3>
-            <pre id="resources">-</pre>
-          </div>
+            <article class="info-card" style="margin-top:10px;">
+              <h3>Volunteer SMS Draft (Editable)</h3>
+              <textarea id="sms" placeholder="Type or edit SMS draft here..."></textarea>
+              <label for="recipientNumber">Recipient phone (E.164)</label>
+              <input id="recipientNumber" placeholder="+15551234567" />
+              <div class="button-row">
+                <button id="copySms" class="btn-muted">Copy Draft</button>
+                <button id="queueSms" class="btn-muted">Queue Outbox</button>
+              </div>
+              <p id="deliveryNote" class="tiny" style="margin:8px 0 0;"></p>
+              <p id="smsStatus" class="statusline"></p>
+            </article>
 
-          <div class="panel-section">
-            <h3 class="section-title">Outbox (Store-and-Forward)</h3>
-            <div class="btn-row">
-              <button id="sendQueued" class="btn-secondary">Send Queued</button>
-              <button id="clearSent" class="btn-secondary">Clear Sent</button>
+            <div class="grid-cards two" style="margin-top:10px;">
+              <article class="info-card safe">
+                <h3>Source Context</h3>
+                <ul id="sources"></ul>
+              </article>
+              <article class="info-card info">
+                <h3>Resource Handoff Packet</h3>
+                <pre id="resources">-</pre>
+              </article>
             </div>
-            <label for="connectivityReady">Connectivity</label>
-            <select id="connectivityReady">
-              <option value="no">Offline (keep queued)</option>
-              <option value="yes">Online (attempt send)</option>
-            </select>
-            <ul id="outbox" class="outbox-list"></ul>
+
+            <article class="info-card" style="margin-top:10px;">
+              <h3>Outbox (Store-and-Forward)</h3>
+              <div class="button-row">
+                <button id="sendQueued" class="btn-muted">Send Queued</button>
+                <button id="clearSent" class="btn-muted">Clear Sent</button>
+              </div>
+              <label for="connectivityReady">Connectivity mode</label>
+              <select id="connectivityReady">
+                <option value="no">Offline (keep queued)</option>
+                <option value="yes">Online (attempt send)</option>
+              </select>
+              <ul id="outbox" class="outbox-list"></ul>
+            </article>
           </div>
         </section>
       </section>
@@ -434,7 +472,7 @@
         outboxList.innerHTML = "";
         if (!items.length) {
           const li = document.createElement("li");
-          li.className = "outbox-item muted";
+          li.className = "outbox-item tiny";
           li.textContent = "Outbox empty.";
           outboxList.appendChild(li);
           return;
@@ -445,9 +483,9 @@
           li.innerHTML = `
             <span class="status-tag ${statusClass(item.status)}">${item.status}</span>
             <div><strong>${item.hazard || "general"}</strong> - ${item.location || "unknown location"}</div>
-            <div class="muted tiny" style="margin-top:4px;">To: ${item.toNumber || "(not set)"}</div>
-            <div class="muted tiny" style="margin-top:6px;">${item.message || "-"}</div>
-            <div class="muted tiny" style="margin-top:6px;">#${idx + 1} | ${item.createdAt || ""}</div>
+            <div class="tiny" style="margin-top:4px;">To: ${item.toNumber || "(not set)"}</div>
+            <div class="tiny" style="margin-top:6px;">${item.message || "-"}</div>
+            <div class="tiny" style="margin-top:6px;">#${idx + 1} | ${item.createdAt || ""}</div>
           `;
           outboxList.appendChild(li);
         });
@@ -471,9 +509,7 @@
             body: JSON.stringify(payload)
           });
 
-          if (!res.ok) {
-            throw new Error("Planner request failed");
-          }
+          if (!res.ok) throw new Error("Planner request failed");
 
           const data = await res.json();
           document.getElementById("meta").innerHTML =
