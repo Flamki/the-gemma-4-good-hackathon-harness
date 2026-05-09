@@ -21,7 +21,7 @@ from app.disaster_tools import (
     infer_severity,
 )
 from app.knowledge import load_knowledge, rank_knowledge
-from app.model_client import OllamaGemmaClient
+from app.model_client import HuggingFaceRouterClient, ModelResult, OllamaGemmaClient
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -32,6 +32,10 @@ SCENARIOS_PATH = BASE_DIR / "evaluation" / "scenarios.json"
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gemma3")
 REQUEST_TIMEOUT_SECONDS = int(os.getenv("REQUEST_TIMEOUT_SECONDS", "60"))
+INFERENCE_BACKEND = os.getenv("INFERENCE_BACKEND", "auto").lower()
+HF_TOKEN = os.getenv("HF_TOKEN", "")
+HF_MODEL = os.getenv("HF_MODEL", "google/gemma-2-2b-it")
+HF_BASE_URL = os.getenv("HF_BASE_URL", "https://router.huggingface.co/v1")
 
 app = FastAPI(title="RescueLoop", version="0.1.0")
 app.add_middleware(
@@ -46,6 +50,12 @@ knowledge_records = load_knowledge(KNOWLEDGE_PATH)
 model_client = OllamaGemmaClient(
     base_url=OLLAMA_BASE_URL,
     model=OLLAMA_MODEL,
+    timeout_seconds=REQUEST_TIMEOUT_SECONDS,
+)
+hf_client = HuggingFaceRouterClient(
+    token=HF_TOKEN,
+    model=HF_MODEL,
+    base_url=HF_BASE_URL,
     timeout_seconds=REQUEST_TIMEOUT_SECONDS,
 )
 
@@ -225,6 +235,37 @@ def _delivery_note(constraints: str) -> str:
     return "Message content is generated locally; transmission depends on available SMS or internet connectivity."
 
 
+def _run_model(
+    system_prompt: str,
+    user_prompt: str,
+    tools: list[dict[str, Any]],
+) -> ModelResult:
+    backend = INFERENCE_BACKEND
+
+    if backend == "ollama":
+        return model_client.generate_with_tools(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            tools=tools,
+            tool_runner=_tool_runner,
+        )
+
+    if backend == "hf_router":
+        return hf_client.generate_json(system_prompt=system_prompt, user_prompt=user_prompt)
+
+    # auto mode: prefer local ollama, then hosted HF router, then fallback
+    if model_client.is_available():
+        return model_client.generate_with_tools(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            tools=tools,
+            tool_runner=_tool_runner,
+        )
+    if hf_client.is_configured():
+        return hf_client.generate_json(system_prompt=system_prompt, user_prompt=user_prompt)
+    return ModelResult(mode="fallback", content="", error="no_available_backend")
+
+
 def _load_scenarios() -> list[dict[str, Any]]:
     if not SCENARIOS_PATH.exists():
         return []
@@ -248,7 +289,11 @@ def health() -> dict[str, Any]:
     return {
         "status": "ok",
         "ollama_available": model_client.is_available(),
+        "hf_router_configured": hf_client.is_configured(),
+        "hf_router_available": hf_client.is_available() if hf_client.is_configured() else False,
+        "inference_backend": INFERENCE_BACKEND,
         "model": OLLAMA_MODEL,
+        "hf_model": HF_MODEL,
         "knowledge_records": len(knowledge_records),
         "scenario_count": len(_load_scenarios()),
     }
@@ -288,11 +333,10 @@ def generate_plan(request: PlanRequest) -> PlanResponse:
         f"Reference snippets:\n{context_text}\n"
     )
 
-    result = model_client.generate_with_tools(
+    result = _run_model(
         system_prompt=system_prompt,
         user_prompt=user_prompt,
         tools=_tool_schemas(),
-        tool_runner=_tool_runner,
     )
 
     if result.mode != "ollama" or not result.content:
@@ -323,7 +367,7 @@ def generate_plan(request: PlanRequest) -> PlanResponse:
         sources = ["No external snippets (model-only response)"]
 
     return PlanResponse(
-        mode="ollama",
+        mode=result.mode if result.mode in {"ollama", "hf_router"} else "fallback",
         hazard=hazard,
         severity=severity,
         escalation_level=str(parsed.get("escalation_level", infer_escalation_level(severity=severity, incident=request.incident))),

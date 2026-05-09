@@ -56,12 +56,24 @@ The UI includes a local **Outbox simulation**:
 
 ## Gemma usage
 
-RescueLoop is designed to run with Gemma-family models served locally.
-Default model variable:
+RescueLoop supports two inference backends:
+
+1. `ollama` (local runtime)
+2. `hf_router` (hosted via Hugging Face Inference Providers)
+3. `auto` (default: try Ollama first, then HF Router if configured)
+
+Default local model variable:
 
 - `OLLAMA_MODEL=gemma3`
 
 For the hackathon, set this to your Gemma 4 model tag available in your local runtime.
+
+Hosted backend variables:
+
+- `INFERENCE_BACKEND=hf_router` (or `auto`)
+- `HF_TOKEN=<your_hugging_face_token>`
+- `HF_MODEL=<router-supported-model-id>`
+- `HF_BASE_URL=https://router.huggingface.co/v1`
 
 ## Local runtime setup (Ollama)
 
@@ -163,6 +175,21 @@ Health check path:
 - `/health`
 
 Important: hosted cloud instances usually do not have your local Ollama runtime. In that case, RescueLoop will run in deterministic fallback mode unless you provide a reachable model endpoint.
+
+### Option D: Vercel + Hugging Face hosted inference
+
+Vercel is already configured and deployed.
+To enable hosted inference on Vercel, set project env vars:
+
+1. `INFERENCE_BACKEND=hf_router`
+2. `HF_TOKEN=<your token>`
+3. `HF_MODEL=<router-supported model>`
+
+Then redeploy:
+
+```bash
+vercel --prod --yes
+```
 
 ## Evaluation harness
 

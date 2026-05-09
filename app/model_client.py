@@ -101,3 +101,69 @@ class OllamaGemmaClient:
             )
         except requests.RequestException as exc:
             return ModelResult(mode="fallback", content="", error=str(exc))
+
+
+class HuggingFaceRouterClient:
+    def __init__(
+        self,
+        token: str,
+        model: str,
+        base_url: str = "https://router.huggingface.co/v1",
+        timeout_seconds: int = 60,
+    ) -> None:
+        self.token = token
+        self.model = model
+        self.base_url = base_url.rstrip("/")
+        self.timeout_seconds = timeout_seconds
+
+    def is_configured(self) -> bool:
+        return bool(self.token and self.model)
+
+    def is_available(self) -> bool:
+        if not self.is_configured():
+            return False
+        try:
+            response = requests.get(
+                f"{self.base_url}/models",
+                headers={"Authorization": f"Bearer {self.token}"},
+                timeout=min(self.timeout_seconds, 12),
+            )
+            return response.status_code < 500
+        except requests.RequestException:
+            return False
+
+    def generate_json(self, system_prompt: str, user_prompt: str) -> ModelResult:
+        if not self.is_configured():
+            return ModelResult(mode="fallback", content="", error="hf_router_not_configured")
+
+        payload = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            "temperature": 0.2,
+            "response_format": {"type": "json_object"},
+        }
+        try:
+            response = requests.post(
+                f"{self.base_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.token}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+                timeout=self.timeout_seconds,
+            )
+            response.raise_for_status()
+            data = response.json()
+            choices = data.get("choices", [])
+            if not choices:
+                return ModelResult(mode="fallback", content="", error="hf_no_choices")
+            message = choices[0].get("message", {})
+            content = message.get("content", "")
+            if isinstance(content, list):
+                content = " ".join(str(part.get("text", "")) for part in content if isinstance(part, dict))
+            return ModelResult(mode="hf_router", content=str(content), raw=data)
+        except requests.RequestException as exc:
+            return ModelResult(mode="fallback", content="", error=str(exc))
