@@ -123,6 +123,7 @@
       let alarmTimer = null;
       let audioCtx = null;
       let osc = null;
+      let currentAlarmSeverity = "low";
 
       const loadState = () => {
         try {
@@ -154,20 +155,38 @@
         statusPill.style.color = armed ? "#8ce9b7" : "#d9e2f3";
       };
 
-      const startAlarm = () => {
+      const alarmProfile = (severity) => {
+        const s = (severity || "").toLowerCase();
+        if (s === "critical") {
+          return { vib: [900, 180, 900, 180, 1200], interval: 2600, hz: 900, gain: 0.06, pulse: "critical" };
+        }
+        if (s === "high") {
+          return { vib: [600, 180, 600, 180, 900], interval: 2200, hz: 820, gain: 0.045, pulse: "high" };
+        }
+        if (s === "medium") {
+          return { vib: [300, 160, 300], interval: 4200, hz: 690, gain: 0.03, pulse: "medium" };
+        }
+        return { vib: [180], interval: 8000, hz: 560, gain: 0.02, pulse: "low" };
+      };
+
+      const startAlarm = (severity) => {
+        const profile = alarmProfile(severity);
+        currentAlarmSeverity = severity || "low";
         alarmLight.classList.add("flash");
+        alarmLight.style.background = profile.pulse === "critical" ? "#d6452f" : "#2a394f";
+
         if (navigator.vibrate) {
-          navigator.vibrate([500, 200, 500, 200, 900]);
-          alarmTimer = setInterval(() => navigator.vibrate([500, 200, 500, 200, 900]), 2300);
+          navigator.vibrate(profile.vib);
+          alarmTimer = setInterval(() => navigator.vibrate(profile.vib), profile.interval);
         }
         try {
           audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
           if (audioCtx.state === "suspended") audioCtx.resume();
           osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
-          osc.type = "square";
-          osc.frequency.value = 820;
-          gain.gain.value = 0.04;
+          osc.type = profile.pulse === "critical" ? "sawtooth" : "square";
+          osc.frequency.value = profile.hz;
+          gain.gain.value = profile.gain;
           osc.connect(gain);
           gain.connect(audioCtx.destination);
           osc.start();
@@ -176,6 +195,7 @@
 
       const stopAlarm = () => {
         alarmLight.classList.remove("flash");
+        alarmLight.style.background = "#2a394f";
         if (alarmTimer) {
           clearInterval(alarmTimer);
           alarmTimer = null;
@@ -196,8 +216,14 @@
         alertTitle.textContent = `[${a.severity.toUpperCase()}] ${a.title}`;
         alertMessage.textContent = a.message;
         alertMeta.textContent = `${a.location || "Unknown location"} | ${new Date(a.created_at).toLocaleString()}`;
-        systemStatus.textContent = "Critical alert received. Alarm active until acknowledgement.";
-        startAlarm();
+        if (a.severity === "critical" || a.severity === "high") {
+          systemStatus.textContent = "High-priority alert received. Alarm active until acknowledgement.";
+        } else if (a.severity === "medium") {
+          systemStatus.textContent = "Medium-priority alert received. Gentle alert pattern active.";
+        } else {
+          systemStatus.textContent = "Low-priority alert received.";
+        }
+        startAlarm(a.severity);
       };
 
       const clearAlert = () => {
@@ -260,7 +286,7 @@
           await fetch(`${apiBase()}/api/alerts/${activeAlert.id}/ack`, { method: "POST" });
         } catch {}
         clearAlert();
-        systemStatus.textContent = "Alert acknowledged.";
+        systemStatus.textContent = `Alert acknowledged (${currentAlarmSeverity}).`;
       });
 
       saveBaseBtn.addEventListener("click", () => {
