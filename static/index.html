@@ -141,6 +141,11 @@
         border-color: #15803d;
         background: rgba(21, 128, 61, 0.2);
       }
+      .status-failed {
+        color: #fca5a5;
+        border-color: #b91c1c;
+        background: rgba(185, 28, 28, 0.2);
+      }
     </style>
   </head>
   <body>
@@ -195,6 +200,8 @@
 
           <h3 class="section-title">Volunteer SMS Draft (Editable)</h3>
           <textarea id="sms" placeholder="Type or edit SMS draft here..."></textarea>
+          <label for="recipientNumber">Recipient phone (E.164 format)</label>
+          <input id="recipientNumber" placeholder="+15551234567" />
           <div class="btn-row">
             <button id="copySms" class="btn-secondary">Copy SMS Draft</button>
             <button id="queueSms" class="btn-secondary">Queue In Outbox</button>
@@ -263,6 +270,7 @@
       const statusClass = (state) => {
         if (state === "sent") return "status-sent";
         if (state === "sending") return "status-sending";
+        if (state === "failed") return "status-failed";
         return "status-queued";
       };
 
@@ -282,6 +290,7 @@
           li.innerHTML = `
             <span class="status-tag ${statusClass(item.status)}">${item.status}</span>
             <div><strong>${item.hazard || "general"}</strong> - ${item.location || "unknown location"}</div>
+            <div class="muted" style="margin-top:4px;">To: ${item.toNumber || "(not set)"}</div>
             <div class="muted" style="margin-top:6px;">${item.message || "-"}</div>
             <div class="muted" style="margin-top:6px;font-size:.8rem;">#${idx + 1} | ${item.createdAt || ""}</div>
           `;
@@ -359,10 +368,12 @@
         const metaText = document.getElementById("meta").textContent || "";
         const hazard = /Hazard:\s*([A-Za-z]+)/.exec(metaText)?.[1]?.toLowerCase() || "general";
         const location = document.getElementById("location").value || "unknown location";
+        const toNumber = document.getElementById("recipientNumber").value.trim();
         outbox.push({
           status: "queued",
           hazard,
           location,
+          toNumber,
           message: sms,
           createdAt: new Date().toLocaleString()
         });
@@ -371,7 +382,7 @@
         smsStatus.textContent = "Queued in outbox. It can be sent when connectivity is available.";
       });
 
-      sendQueuedBtn.addEventListener("click", () => {
+      sendQueuedBtn.addEventListener("click", async () => {
         const allowSend = connectivityReady.value === "yes";
         const outbox = readOutbox();
         if (!outbox.length) {
@@ -390,17 +401,53 @@
         });
         writeOutbox(updated);
         renderOutbox();
-        setTimeout(() => {
-          const sent = readOutbox().map((item) => {
-            if (item.status === "sending") {
-              return { ...item, status: "sent" };
+
+        const processed = [];
+        for (const item of readOutbox()) {
+          if (item.status !== "sending") {
+            processed.push(item);
+            continue;
+          }
+          const toNumber = (item.toNumber || "").trim();
+          if (!toNumber) {
+            processed.push({ ...item, status: "failed", error: "Missing recipient number." });
+            continue;
+          }
+          try {
+            const res = await fetch("/api/send_sms", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ to_number: toNumber, message: item.message || "" })
+            });
+            if (!res.ok) {
+              processed.push({ ...item, status: "failed", error: "Send API call failed." });
+              continue;
             }
-            return item;
-          });
-          writeOutbox(sent);
-          renderOutbox();
-          smsStatus.textContent = "Queued messages marked as sent (simulated delivery).";
-        }, 900);
+            const data = await res.json();
+            if (data.delivered) {
+              processed.push({
+                ...item,
+                status: "sent",
+                provider: data.provider,
+                providerMessageId: data.provider_message_id || ""
+              });
+            } else {
+              // Keep behavior transparent: fallback to demo simulation if provider is not configured.
+              if (data.error === "provider_not_configured") {
+                processed.push({ ...item, status: "sent", provider: "simulation" });
+              } else {
+                processed.push({ ...item, status: "failed", error: data.error || data.message || "Unknown error" });
+              }
+            }
+          } catch (e) {
+            processed.push({ ...item, status: "failed", error: "Network or server error." });
+          }
+        }
+        writeOutbox(processed);
+        renderOutbox();
+        const sentCount = processed.filter((x) => x.status === "sent").length;
+        const failedCount = processed.filter((x) => x.status === "failed").length;
+        smsStatus.textContent = `Send attempt complete. Sent: ${sentCount}, Failed: ${failedCount}.`;
       });
 
       clearSentBtn.addEventListener("click", () => {

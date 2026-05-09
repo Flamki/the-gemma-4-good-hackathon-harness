@@ -21,6 +21,7 @@ from app.disaster_tools import (
     infer_severity,
 )
 from app.knowledge import load_knowledge, rank_knowledge
+from app.message_sender import SmsSender
 from app.model_client import HuggingFaceRouterClient, ModelResult, OllamaGemmaClient
 
 
@@ -36,6 +37,10 @@ INFERENCE_BACKEND = os.getenv("INFERENCE_BACKEND", "auto").lower()
 HF_TOKEN = os.getenv("HF_TOKEN", "")
 HF_MODEL = os.getenv("HF_MODEL", "google/gemma-2-2b-it")
 HF_BASE_URL = os.getenv("HF_BASE_URL", "https://router.huggingface.co/v1")
+SMS_PROVIDER = os.getenv("SMS_PROVIDER", "none")
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
+TWILIO_FROM_NUMBER = os.getenv("TWILIO_FROM_NUMBER", "")
 
 app = FastAPI(title="RescueLoop", version="0.1.0")
 app.add_middleware(
@@ -56,6 +61,13 @@ hf_client = HuggingFaceRouterClient(
     token=HF_TOKEN,
     model=HF_MODEL,
     base_url=HF_BASE_URL,
+    timeout_seconds=REQUEST_TIMEOUT_SECONDS,
+)
+sms_sender = SmsSender(
+    provider=SMS_PROVIDER,
+    twilio_account_sid=TWILIO_ACCOUNT_SID,
+    twilio_auth_token=TWILIO_AUTH_TOKEN,
+    twilio_from_number=TWILIO_FROM_NUMBER,
     timeout_seconds=REQUEST_TIMEOUT_SECONDS,
 )
 
@@ -82,6 +94,19 @@ class PlanResponse(BaseModel):
     resource_packet: dict[str, Any]
     sources: list[str]
     rationale: str
+
+
+class SmsSendRequest(BaseModel):
+    to_number: str = Field(..., min_length=6, max_length=32)
+    message: str = Field(..., min_length=1, max_length=1000)
+
+
+class SmsSendResponse(BaseModel):
+    delivered: bool
+    provider: str
+    message: str
+    provider_message_id: str | None = None
+    error: str | None = None
 
 
 def _tool_runner(name: str, args: dict[str, Any]) -> Any:
@@ -294,6 +319,8 @@ def health() -> dict[str, Any]:
         "inference_backend": INFERENCE_BACKEND,
         "model": OLLAMA_MODEL,
         "hf_model": HF_MODEL,
+        "sms_provider": SMS_PROVIDER,
+        "sms_configured": sms_sender.is_configured(),
         "knowledge_records": len(knowledge_records),
         "scenario_count": len(_load_scenarios()),
     }
@@ -302,6 +329,18 @@ def health() -> dict[str, Any]:
 @app.get("/api/scenarios")
 def scenarios() -> dict[str, Any]:
     return {"items": _load_scenarios()}
+
+
+@app.post("/api/send_sms", response_model=SmsSendResponse)
+def send_sms(request: SmsSendRequest) -> SmsSendResponse:
+    result = sms_sender.send_sms(to_number=request.to_number, body=request.message)
+    return SmsSendResponse(
+        delivered=result.delivered,
+        provider=result.provider,
+        message=result.message,
+        provider_message_id=result.provider_message_id,
+        error=result.error,
+    )
 
 
 @app.post("/api/plan", response_model=PlanResponse)

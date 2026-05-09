@@ -191,6 +191,20 @@ Then redeploy:
 vercel --prod --yes
 ```
 
+## Optional real SMS delivery (Twilio)
+
+By default, outbox delivery is simulation mode unless an SMS provider is configured.
+
+Set these environment variables:
+
+1. `SMS_PROVIDER=twilio`
+2. `TWILIO_ACCOUNT_SID=<sid>`
+3. `TWILIO_AUTH_TOKEN=<token>`
+4. `TWILIO_FROM_NUMBER=<twilio phone number in E.164>`
+
+The UI will call `/api/send_sms` for queued items.  
+If provider config is missing, the app stays in safe simulation mode.
+
 ## Evaluation harness
 
 Run scenario benchmark:

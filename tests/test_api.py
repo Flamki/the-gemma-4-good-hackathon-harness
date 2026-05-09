@@ -43,3 +43,13 @@ def test_plan_endpoint_returns_structured_payload() -> None:
         assert key in data
     assert isinstance(data["first_15_min"], list)
     assert isinstance(data["resource_packet"], dict)
+
+
+def test_send_sms_endpoint_simulation_mode_when_not_configured() -> None:
+    payload = {"to_number": "+15551234567", "message": "Test alert message"}
+    response = client.post("/api/send_sms", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["delivered"] is False
+    assert "provider" in data
+    assert data["error"] in {"provider_not_configured", "invalid_payload"}
