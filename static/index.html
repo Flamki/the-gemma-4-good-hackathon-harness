@@ -3,164 +3,303 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>RescueLoop - Offline Disaster Copilot</title>
+    <title>RescueLoop - Disaster Coordination Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
       :root {
-        --bg: #0f172a;
-        --panel: #111827;
-        --muted: #9ca3af;
-        --text: #f9fafb;
-        --accent: #22c55e;
-        --danger: #ef4444;
+        --bg: #081b22;
+        --bg-2: #112f39;
+        --panel: rgba(9, 26, 33, 0.82);
+        --panel-2: rgba(13, 35, 45, 0.9);
+        --line: rgba(139, 193, 187, 0.28);
+        --text: #e5f7f1;
+        --muted: #94b8b0;
+        --accent: #27d6a1;
+        --accent-2: #0db4ff;
+        --warn: #fdbb61;
+        --danger: #ff8181;
       }
+
       * { box-sizing: border-box; }
+
       body {
         margin: 0;
-        font-family: "Segoe UI", Arial, sans-serif;
-        background: radial-gradient(circle at 20% 10%, #1e293b, #0b1020 45%, #05070f);
-        color: var(--text);
         min-height: 100vh;
+        color: var(--text);
+        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        background:
+          radial-gradient(circle at 8% 12%, rgba(39, 214, 161, 0.21), transparent 30%),
+          radial-gradient(circle at 90% 18%, rgba(13, 180, 255, 0.2), transparent 35%),
+          linear-gradient(130deg, var(--bg), var(--bg-2));
       }
-      .wrap {
-        width: min(1100px, 92vw);
-        margin: 28px auto;
-        display: grid;
-        gap: 18px;
+
+      .noise {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        opacity: .08;
+        background-image:
+          linear-gradient(transparent 96%, rgba(180, 239, 229, .18) 100%),
+          linear-gradient(90deg, transparent 96%, rgba(180, 239, 229, .08) 100%);
+        background-size: 100% 4px, 4px 100%;
       }
-      .hero, .card {
-        background: linear-gradient(180deg, rgba(17,24,39,.92), rgba(3,7,18,.92));
-        border: 1px solid rgba(148,163,184,.2);
-        border-radius: 14px;
-        padding: 18px;
-      }
-      .hero h1 { margin: 0 0 8px; font-size: clamp(1.3rem, 3vw, 2rem); }
-      .hero p { margin: 0; color: var(--muted); }
-      .grid {
+
+      .shell {
+        width: min(1220px, 94vw);
+        margin: 20px auto 32px;
         display: grid;
         gap: 16px;
       }
-      @media (min-width: 900px) {
-        .grid { grid-template-columns: 1fr 1fr; }
+
+      .hero {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 18px 20px;
+        background: linear-gradient(150deg, rgba(12, 36, 46, .88), rgba(7, 20, 26, .92));
+        box-shadow: 0 18px 50px rgba(0, 0, 0, .28);
+        animation: rise .55s ease;
       }
+
+      .kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        padding: 4px 10px;
+        border: 1px solid rgba(39, 214, 161, 0.4);
+        border-radius: 999px;
+        font-size: .74rem;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+        color: #9af7df;
+        font-family: "IBM Plex Mono", monospace;
+      }
+
+      .hero h1 {
+        margin: 0;
+        font-family: "Space Grotesk", sans-serif;
+        font-size: clamp(1.45rem, 4vw, 2.35rem);
+        line-height: 1.08;
+      }
+
+      .hero p {
+        margin: 9px 0 0;
+        color: #b9d9d2;
+        max-width: 920px;
+      }
+
+      .layout {
+        display: grid;
+        gap: 16px;
+      }
+
+      @media (min-width: 980px) {
+        .layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 18px;
+        backdrop-filter: blur(8px);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 14px 34px rgba(0,0,0,.25);
+        animation: rise .7s ease;
+      }
+
+      .card h2 {
+        margin: 0 0 8px;
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 1.16rem;
+      }
+
+      .subtle {
+        margin: 0 0 14px;
+        color: var(--muted);
+        font-size: .92rem;
+      }
+
       label {
         display: block;
-        font-size: .9rem;
-        margin: 12px 0 6px;
-        color: #d1d5db;
+        margin: 11px 0 7px;
+        color: #c6e8df;
+        font-size: .86rem;
+        font-weight: 500;
       }
+
       input, textarea, select, button {
         width: 100%;
-        border-radius: 10px;
-        border: 1px solid #334155;
-        background: #0b1220;
+        border-radius: 12px;
+        border: 1px solid rgba(141, 194, 188, .28);
+        background: rgba(5, 17, 22, .78);
         color: var(--text);
-        padding: 10px 12px;
+        padding: 11px 12px;
         font-size: .95rem;
       }
-      textarea { min-height: 120px; resize: vertical; }
+
+      textarea {
+        min-height: 104px;
+        resize: vertical;
+        line-height: 1.35;
+      }
+
+      input:focus, textarea:focus, select:focus {
+        outline: none;
+        border-color: rgba(39, 214, 161, .75);
+        box-shadow: 0 0 0 2px rgba(39, 214, 161, .22);
+      }
+
       button {
         cursor: pointer;
-        background: linear-gradient(90deg, #16a34a, #22c55e);
         border: none;
-        margin-top: 12px;
-        font-weight: 600;
+        background: linear-gradient(95deg, var(--accent), #00bd8d);
+        color: #042319;
+        font-weight: 700;
+        letter-spacing: .01em;
+        transition: transform .15s ease, filter .15s ease;
       }
+
+      button:hover { transform: translateY(-1px); filter: brightness(1.05); }
+      button:disabled { opacity: .7; cursor: not-allowed; transform: none; }
+
       .btn-row {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 10px;
+        gap: 9px;
         margin-top: 8px;
       }
-      .btn-row button {
-        margin-top: 0;
-      }
+
       .btn-secondary {
-        background: #0b1220;
-        border: 1px solid #334155;
+        background: linear-gradient(95deg, rgba(16, 47, 58, .95), rgba(9, 32, 41, .95));
+        border: 1px solid rgba(137, 190, 184, .34);
+        color: #d8f1eb;
+        font-weight: 600;
       }
-      button:disabled { opacity: .7; cursor: not-allowed; }
-      .pill {
-        display: inline-block;
-        margin-right: 8px;
-        margin-top: 8px;
-        background: rgba(34,197,94,.12);
-        color: #86efac;
-        border: 1px solid rgba(34,197,94,.3);
-        padding: 4px 8px;
-        border-radius: 999px;
-        font-size: .8rem;
+
+      .panel-section {
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(141, 194, 188, .18);
       }
-      .muted { color: var(--muted); }
-      .danger { color: #fca5a5; }
+
       .section-title {
-        margin: 18px 0 10px;
-        color: #bfdbfe;
-        font-size: 1rem;
+        margin: 0 0 9px;
+        font-size: .96rem;
+        letter-spacing: .02em;
+        color: #b2ece0;
+        font-family: "Space Grotesk", sans-serif;
       }
-      ul { margin: 8px 0 14px 20px; }
+
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        font-size: .75rem;
+        border: 1px solid rgba(120, 190, 178, .38);
+        background: rgba(18, 54, 64, .72);
+        color: #9ef1de;
+        font-family: "IBM Plex Mono", monospace;
+      }
+
+      .muted { color: var(--muted); }
+      .danger { color: var(--danger); }
+
+      ul {
+        margin: 0;
+        padding-left: 18px;
+        display: grid;
+        gap: 6px;
+      }
+
+      li { color: #d6ede7; }
+
       pre {
-        background: #030712;
-        border: 1px solid #1f2937;
-        border-radius: 10px;
+        margin: 0;
         padding: 10px;
+        border-radius: 11px;
+        border: 1px solid rgba(120, 186, 178, .24);
+        background: var(--panel-2);
+        color: #bfeee2;
         white-space: pre-wrap;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: .86rem;
       }
+
       .outbox-list {
         list-style: none;
-        margin: 6px 0 0;
+        margin: 8px 0 0;
         padding: 0;
         display: grid;
         gap: 8px;
       }
+
       .outbox-item {
-        border: 1px solid #1f2937;
-        border-radius: 10px;
+        border: 1px solid rgba(128, 182, 177, .24);
+        border-radius: 11px;
         padding: 10px;
-        background: #030712;
+        background: rgba(11, 31, 39, .86);
       }
+
       .status-tag {
         display: inline-block;
-        margin-bottom: 6px;
-        padding: 3px 8px;
+        margin-bottom: 5px;
+        padding: 3px 9px;
         border-radius: 999px;
-        font-size: .75rem;
-        border: 1px solid #334155;
+        font-size: .72rem;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        font-family: "IBM Plex Mono", monospace;
       }
-      .status-queued {
-        color: #fcd34d;
-        border-color: #92400e;
-        background: rgba(146, 64, 14, 0.2);
+      .status-queued { color: #fbd38d; background: rgba(134, 79, 3, .22); border: 1px solid rgba(194, 124, 24, .45); }
+      .status-sending { color: #8fd8ff; background: rgba(4, 91, 143, .25); border: 1px solid rgba(51, 158, 230, .45); }
+      .status-sent { color: #9af4cf; background: rgba(11, 116, 72, .24); border: 1px solid rgba(42, 180, 125, .45); }
+      .status-failed { color: #ffaaaa; background: rgba(143, 20, 20, .24); border: 1px solid rgba(204, 76, 76, .45); }
+
+      .status-bar {
+        margin-top: 10px;
+        min-height: 20px;
+        font-size: .88rem;
       }
-      .status-sending {
-        color: #93c5fd;
-        border-color: #1d4ed8;
-        background: rgba(29, 78, 216, 0.2);
+
+      .tiny {
+        font-size: .79rem;
+        line-height: 1.45;
       }
-      .status-sent {
-        color: #86efac;
-        border-color: #15803d;
-        background: rgba(21, 128, 61, 0.2);
-      }
-      .status-failed {
-        color: #fca5a5;
-        border-color: #b91c1c;
-        background: rgba(185, 28, 28, 0.2);
+
+      @keyframes rise {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
       }
     </style>
   </head>
   <body>
-    <main class="wrap">
+    <div class="noise"></div>
+    <main class="shell">
       <section class="hero">
-        <h1>RescueLoop: Offline Disaster Response Copilot</h1>
+        <div class="kicker">RescueLoop Console</div>
+        <h1>Emergency Coordination, Built For Low Connectivity</h1>
         <p>
-          Gemma-powered local-first assistant for emergency action planning,
-          volunteer message drafting, and multilingual response support.
+          Generate high-priority action plans, draft field-ready SMS updates, and move through a
+          store-and-forward communication workflow without losing clarity under pressure.
         </p>
       </section>
 
-      <section class="grid">
-        <div class="card">
-          <h2 style="margin-top:0;">Incident Input</h2>
+      <section class="layout">
+        <section class="card">
+          <h2>Incident Intake</h2>
+          <p class="subtle">Capture a realistic ground report, then run the planner.</p>
+
           <label for="incident">Incident details</label>
           <textarea id="incident">Heavy rain since morning, river overflow likely, 2 elderly people at home, no reliable internet.</textarea>
 
@@ -176,57 +315,73 @@
             <option>Marathi</option>
           </select>
 
-          <label for="constraints">Constraints (optional)</label>
+          <label for="constraints">Constraints</label>
           <input id="constraints" value="Power cuts expected; only SMS works intermittently." />
 
           <button id="run">Generate Response Plan</button>
-          <p class="muted" id="status">Ready.</p>
-        </div>
+          <p class="status-bar muted" id="status">Ready.</p>
+        </section>
 
-        <div class="card">
-          <h2 style="margin-top:0;">Plan Output</h2>
-          <div id="meta"></div>
+        <section class="card">
+          <h2>Response Operations</h2>
+          <p class="subtle">Review recommended actions and coordinate outbound messaging.</p>
+
+          <div id="meta" class="meta"></div>
           <p id="summary" class="muted">Run the planner to generate output.</p>
-          <p id="confidence" class="muted"></p>
+          <p id="confidence" class="tiny muted"></p>
 
-          <h3 class="section-title">First 15 minutes</h3>
-          <ul id="first15"></ul>
-
-          <h3 class="section-title">Next 24 hours</h3>
-          <ul id="next24"></ul>
-
-          <h3 class="section-title">Do not</h3>
-          <ul id="donot"></ul>
-
-          <h3 class="section-title">Volunteer SMS Draft (Editable)</h3>
-          <textarea id="sms" placeholder="Type or edit SMS draft here..."></textarea>
-          <label for="recipientNumber">Recipient phone (E.164 format)</label>
-          <input id="recipientNumber" placeholder="+15551234567" />
-          <div class="btn-row">
-            <button id="copySms" class="btn-secondary">Copy SMS Draft</button>
-            <button id="queueSms" class="btn-secondary">Queue In Outbox</button>
+          <div class="panel-section">
+            <h3 class="section-title">First 15 Minutes</h3>
+            <ul id="first15"></ul>
           </div>
-          <p id="deliveryNote" class="muted"></p>
-          <p id="smsStatus" class="muted"></p>
 
-          <h3 class="section-title">Sources</h3>
-          <ul id="sources"></ul>
-
-          <h3 class="section-title">Resource Handoff Packet</h3>
-          <pre id="resources">-</pre>
-
-          <h3 class="section-title">Outbox (Store-and-Forward)</h3>
-          <div class="btn-row">
-            <button id="sendQueued" class="btn-secondary">Try Send Queued</button>
-            <button id="clearSent" class="btn-secondary">Clear Sent</button>
+          <div class="panel-section">
+            <h3 class="section-title">Next 24 Hours</h3>
+            <ul id="next24"></ul>
           </div>
-          <label for="connectivityReady">Connectivity available</label>
-          <select id="connectivityReady">
-            <option value="no">No (stay queued)</option>
-            <option value="yes">Yes (simulate sending)</option>
-          </select>
-          <ul id="outbox" class="outbox-list"></ul>
-        </div>
+
+          <div class="panel-section">
+            <h3 class="section-title">Do Not</h3>
+            <ul id="donot"></ul>
+          </div>
+
+          <div class="panel-section">
+            <h3 class="section-title">Volunteer SMS Draft</h3>
+            <textarea id="sms" placeholder="Type or edit SMS draft here..."></textarea>
+            <label for="recipientNumber">Recipient phone (E.164)</label>
+            <input id="recipientNumber" placeholder="+15551234567" />
+            <div class="btn-row">
+              <button id="copySms" class="btn-secondary">Copy Draft</button>
+              <button id="queueSms" class="btn-secondary">Queue Outbox</button>
+            </div>
+            <p id="deliveryNote" class="tiny muted"></p>
+            <p id="smsStatus" class="status-bar muted"></p>
+          </div>
+
+          <div class="panel-section">
+            <h3 class="section-title">Source Context</h3>
+            <ul id="sources"></ul>
+          </div>
+
+          <div class="panel-section">
+            <h3 class="section-title">Resource Handoff Packet</h3>
+            <pre id="resources">-</pre>
+          </div>
+
+          <div class="panel-section">
+            <h3 class="section-title">Outbox (Store-and-Forward)</h3>
+            <div class="btn-row">
+              <button id="sendQueued" class="btn-secondary">Send Queued</button>
+              <button id="clearSent" class="btn-secondary">Clear Sent</button>
+            </div>
+            <label for="connectivityReady">Connectivity</label>
+            <select id="connectivityReady">
+              <option value="no">Offline (keep queued)</option>
+              <option value="yes">Online (attempt send)</option>
+            </select>
+            <ul id="outbox" class="outbox-list"></ul>
+          </div>
+        </section>
       </section>
     </main>
 
@@ -290,9 +445,9 @@
           li.innerHTML = `
             <span class="status-tag ${statusClass(item.status)}">${item.status}</span>
             <div><strong>${item.hazard || "general"}</strong> - ${item.location || "unknown location"}</div>
-            <div class="muted" style="margin-top:4px;">To: ${item.toNumber || "(not set)"}</div>
-            <div class="muted" style="margin-top:6px;">${item.message || "-"}</div>
-            <div class="muted" style="margin-top:6px;font-size:.8rem;">#${idx + 1} | ${item.createdAt || ""}</div>
+            <div class="muted tiny" style="margin-top:4px;">To: ${item.toNumber || "(not set)"}</div>
+            <div class="muted tiny" style="margin-top:6px;">${item.message || "-"}</div>
+            <div class="muted tiny" style="margin-top:6px;">#${idx + 1} | ${item.createdAt || ""}</div>
           `;
           outboxList.appendChild(li);
         });
@@ -322,10 +477,10 @@
 
           const data = await res.json();
           document.getElementById("meta").innerHTML =
-            `<span class="pill">Mode: ${data.mode}</span>` +
-            `<span class="pill">Hazard: ${data.hazard}</span>` +
-            `<span class="pill">Severity: ${data.severity}</span>` +
-            `<span class="pill">Escalation: ${data.escalation_level}</span>`;
+            `<span class="pill">MODE ${data.mode}</span>` +
+            `<span class="pill">HAZARD ${data.hazard}</span>` +
+            `<span class="pill">SEVERITY ${data.severity}</span>` +
+            `<span class="pill">ESCALATION ${data.escalation_level}</span>`;
           document.getElementById("summary").textContent = data.summary || "";
           document.getElementById("confidence").textContent = data.confidence_note || "";
           document.getElementById("sms").value = data.sms_alert || "";
@@ -366,7 +521,7 @@
         }
         const outbox = readOutbox();
         const metaText = document.getElementById("meta").textContent || "";
-        const hazard = /Hazard:\s*([A-Za-z]+)/.exec(metaText)?.[1]?.toLowerCase() || "general";
+        const hazard = /HAZARD\s*([A-Za-z]+)/.exec(metaText)?.[1]?.toLowerCase() || "general";
         const location = document.getElementById("location").value || "unknown location";
         const toNumber = document.getElementById("recipientNumber").value.trim();
         outbox.push({
@@ -390,13 +545,11 @@
           return;
         }
         if (!allowSend) {
-          smsStatus.textContent = "Connectivity set to No. Messages remain queued.";
+          smsStatus.textContent = "Connectivity set to offline. Messages remain queued.";
           return;
         }
         const updated = outbox.map((item) => {
-          if (item.status === "queued") {
-            return { ...item, status: "sending" };
-          }
+          if (item.status === "queued") return { ...item, status: "sending" };
           return item;
         });
         writeOutbox(updated);
@@ -425,21 +578,13 @@
             }
             const data = await res.json();
             if (data.delivered) {
-              processed.push({
-                ...item,
-                status: "sent",
-                provider: data.provider,
-                providerMessageId: data.provider_message_id || ""
-              });
+              processed.push({ ...item, status: "sent", provider: data.provider, providerMessageId: data.provider_message_id || "" });
+            } else if (data.error === "provider_not_configured") {
+              processed.push({ ...item, status: "sent", provider: "simulation" });
             } else {
-              // Keep behavior transparent: fallback to demo simulation if provider is not configured.
-              if (data.error === "provider_not_configured") {
-                processed.push({ ...item, status: "sent", provider: "simulation" });
-              } else {
-                processed.push({ ...item, status: "failed", error: data.error || data.message || "Unknown error" });
-              }
+              processed.push({ ...item, status: "failed", error: data.error || data.message || "Unknown error" });
             }
-          } catch (e) {
+          } catch {
             processed.push({ ...item, status: "failed", error: "Network or server error." });
           }
         }
