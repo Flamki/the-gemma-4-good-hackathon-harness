@@ -1,0 +1,55 @@
+{
+  "summary": {
+    "scenario_count": 5,
+    "success_count": 5,
+    "hf_router_count": 5,
+    "fallback_count": 0
+  },
+  "results": [
+    {
+      "id": "flood-elderly-low-connectivity",
+      "status_code": 200,
+      "mode": "hf_router",
+      "hazard": "flood",
+      "first_15_len": 4,
+      "next_24_len": 4,
+      "do_not_len": 4
+    },
+    {
+      "id": "cyclone-medical-needs",
+      "status_code": 200,
+      "mode": "hf_router",
+      "hazard": "cyclone",
+      "first_15_len": 7,
+      "next_24_len": 7,
+      "do_not_len": 7
+    },
+    {
+      "id": "heatwave-slum-settlement",
+      "status_code": 200,
+      "mode": "hf_router",
+      "hazard": "heatwave",
+      "first_15_len": 7,
+      "next_24_len": 7,
+      "do_not_len": 7
+    },
+    {
+      "id": "earthquake-aftershock",
+      "status_code": 200,
+      "mode": "hf_router",
+      "hazard": "earthquake",
+      "first_15_len": 5,
+      "next_24_len": 5,
+      "do_not_len": 4
+    },
+    {
+      "id": "wildfire-smoke-risk",
+      "status_code": 200,
+      "mode": "hf_router",
+      "hazard": "fire",
+      "first_15_len": 5,
+      "next_24_len": 5,
+      "do_not_len": 4
+    }
+  ]
+}

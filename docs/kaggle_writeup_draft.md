@@ -10,7 +10,7 @@ Global Resilience
 Disaster response often fails in the first hour because information is fragmented, connectivity is unstable, and instructions are not localized for community constraints. In many regions, people cannot depend on cloud tools during floods, cyclones, heatwaves, or earthquakes. They need immediate, practical, and trustworthy guidance that still works under poor internet conditions.
 
 ## 2. Solution
-We built **RescueLoop**, an offline-first disaster response copilot powered by a Gemma-family local model endpoint. RescueLoop accepts a short incident report and returns:
+We built **RescueLoop**, an offline-first disaster response copilot powered by Gemma-family inference. RescueLoop accepts a short incident report and returns:
 
 1. First 15-minute priority actions
 2. Next 24-hour coordination plan
@@ -45,7 +45,8 @@ RescueLoop has five components:
 4. **Agent Tools (`app/disaster_tools.py`)**
    - Generates checklists, SMS templates, and local resource packet formats.
 5. **Model Adapter (`app/model_client.py`)**
-   - Calls local model with tools; falls back to deterministic safety plan if model is unavailable.
+   - Supports backend switching: local Ollama and hosted Hugging Face router.
+   - Falls back to deterministic safety plan if model is unavailable.
 
 ## 5. Gemma-specific Technical Flow
 For each request:
@@ -59,6 +60,10 @@ For each request:
 7. If model unavailable, fallback planner generates a safe minimal plan.
 
 This hybrid design improves reliability for real-world deployments where local model services may intermittently fail.
+
+For the deployed demo, we run hosted Gemma route:
+
+- `google/gemma-4-26B-A4B-it`
 
 ## 6. Real-world Utility
 RescueLoop is designed for community volunteers, NGOs, and local response coordinators. It is useful when:
@@ -89,6 +94,18 @@ It reports:
 
 This provides transparent verification that outputs are not one-off demo artifacts.
 
+We additionally ran a live production smoke benchmark against the deployed Vercel API:
+
+1. Scenario count: 5
+2. Success count: 5
+3. `hf_router` responses: 5
+4. Fallback responses: 0
+
+Artifacts:
+
+- `evaluation/benchmark_results.json`
+- `evaluation/vercel_smoke_results.json`
+
 ## 9. Current Limitations
 1. Knowledge pack is intentionally small for MVP and should be expanded with verified district-level guidance.
 2. Location intelligence is currently template-based and not yet geocoded.
@@ -102,3 +119,7 @@ This provides transparent verification that outputs are not one-off demo artifac
 
 ## 11. Conclusion
 RescueLoop demonstrates how Gemma-powered local intelligence can improve crisis response for communities where connectivity, time, and trust are constrained. By combining local inference, tool-calling, and grounded emergency context, this project delivers practical impact in the moments that matter most.
+
+## Links
+1. Live demo: https://the-gemma-4-good-hackathon-harness.vercel.app
+2. Code repository: https://github.com/Flamki/the-gemma-4-good-hackathon-harness
