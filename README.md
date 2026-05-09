@@ -205,6 +205,18 @@ Set these environment variables:
 The UI will call `/api/send_sms` for queued items.  
 If provider config is missing, the app stays in safe simulation mode.
 
+## Companion alert app (installable PWA)
+
+RescueLoop includes a companion page for responder phones:
+
+- URL: `/companion`
+- Features:
+  - polls `/api/alerts` for new high/critical alerts,
+  - triggers repeated vibration and siren-style tone (after user arms alerts),
+  - supports explicit alert acknowledgement via `/api/alerts/{id}/ack`.
+
+From the main command board, use **Companion App Alert Dispatch** to create alerts.
+
 ## Evaluation harness
 
 Run scenario benchmark:

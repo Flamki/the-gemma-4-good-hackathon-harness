@@ -53,3 +53,28 @@ def test_send_sms_endpoint_simulation_mode_when_not_configured() -> None:
     assert data["delivered"] is False
     assert "provider" in data
     assert data["error"] in {"provider_not_configured", "invalid_payload"}
+
+
+def test_alert_lifecycle_create_list_ack() -> None:
+    create_payload = {
+        "title": "Bridge Collapse Risk",
+        "message": "Do not use East Bridge. Move civilians to alternate route.",
+        "severity": "critical",
+        "location": "Zone 4",
+        "source": "command-center",
+    }
+    created = client.post("/api/alerts", json=create_payload)
+    assert created.status_code == 200
+    c = created.json()
+    assert c["title"] == create_payload["title"]
+    alert_id = c["id"]
+
+    listed = client.get("/api/alerts")
+    assert listed.status_code == 200
+    items = listed.json()["items"]
+    assert any(x["id"] == alert_id for x in items)
+
+    acked = client.post(f"/api/alerts/{alert_id}/ack")
+    assert acked.status_code == 200
+    a = acked.json()
+    assert a["acknowledged"] is True

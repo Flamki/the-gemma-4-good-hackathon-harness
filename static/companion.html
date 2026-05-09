@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RescueLoop Companion</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <style>
+      :root {
+        --bg: #0d131c;
+        --card: #151d2a;
+        --line: #2d3b52;
+        --text: #e8edf7;
+        --muted: #97a4be;
+        --danger: #d6452f;
+        --ok: #2aa56f;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Arial, sans-serif;
+        color: var(--text);
+        background: radial-gradient(circle at 50% 0%, #1b2638, #0b1017 58%);
+        min-height: 100vh;
+        padding: 14px;
+      }
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--card);
+        padding: 14px;
+        margin-bottom: 12px;
+      }
+      h1 { margin: 0 0 8px; font-size: 1.2rem; }
+      .muted { color: var(--muted); font-size: .9rem; }
+      button, input {
+        width: 100%;
+        border-radius: 10px;
+        border: 1px solid #30435f;
+        padding: 10px;
+        margin-top: 8px;
+        background: #101826;
+        color: var(--text);
+      }
+      button { cursor: pointer; font-weight: 700; }
+      .primary { background: linear-gradient(100deg, #d6452f, #ee7542); border: none; }
+      .safe { background: linear-gradient(100deg, #248a5f, #2aa56f); border: none; }
+      .alert {
+        border: 1px solid #763126;
+        background: rgba(214,69,47,.18);
+      }
+      .pill {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: .75rem;
+        border: 1px solid #566889;
+        color: #d9e2f3;
+      }
+      .danger-text { color: #ffb2a8; }
+      .ok-text { color: #8ce9b7; }
+      #alarmLight {
+        height: 10px;
+        border-radius: 999px;
+        background: #2a394f;
+        margin-top: 10px;
+      }
+      .flash {
+        animation: flash 0.7s linear infinite;
+      }
+      @keyframes flash {
+        0% { background: #2a394f; }
+        50% { background: #d6452f; }
+        100% { background: #2a394f; }
+      }
+    </style>
+  </head>
+  <body>
+    <section class="card">
+      <h1>RescueLoop Companion</h1>
+      <p class="muted">Install on responder phones. Arm once to enable vibration + alarm playback.</p>
+      <span class="pill" id="statusPill">Disarmed</span>
+      <button class="primary" id="armBtn">Arm Critical Alerts</button>
+      <button id="disarmBtn">Disarm Alerts</button>
+      <div id="alarmLight"></div>
+      <p class="muted" id="systemStatus">Waiting for arming.</p>
+    </section>
+
+    <section class="card alert" id="alertCard" style="display:none;">
+      <h1 id="alertTitle">Critical Alert</h1>
+      <p id="alertMessage" class="danger-text"></p>
+      <p class="muted" id="alertMeta"></p>
+      <button class="safe" id="ackBtn">Acknowledge Alert</button>
+    </section>
+
+    <section class="card">
+      <h1>Connection</h1>
+      <input id="baseUrl" value="" placeholder="Leave empty to use current host" />
+      <button id="saveBaseBtn">Save Base URL</button>
+      <p class="muted" id="baseMsg"></p>
+    </section>
+
+    <script>
+      const statusPill = document.getElementById("statusPill");
+      const armBtn = document.getElementById("armBtn");
+      const disarmBtn = document.getElementById("disarmBtn");
+      const systemStatus = document.getElementById("systemStatus");
+      const alertCard = document.getElementById("alertCard");
+      const alertTitle = document.getElementById("alertTitle");
+      const alertMessage = document.getElementById("alertMessage");
+      const alertMeta = document.getElementById("alertMeta");
+      const ackBtn = document.getElementById("ackBtn");
+      const alarmLight = document.getElementById("alarmLight");
+      const baseUrlInput = document.getElementById("baseUrl");
+      const baseMsg = document.getElementById("baseMsg");
+      const saveBaseBtn = document.getElementById("saveBaseBtn");
+
+      const KEY = "rescueloop_companion_state_v1";
+      let armed = false;
+      let lastAlertId = "";
+      let activeAlert = null;
+      let pollTimer = null;
+      let alarmTimer = null;
+      let audioCtx = null;
+      let osc = null;
+
+      const loadState = () => {
+        try {
+          const raw = localStorage.getItem(KEY);
+          if (!raw) return;
+          const state = JSON.parse(raw);
+          armed = !!state.armed;
+          lastAlertId = state.lastAlertId || "";
+          baseUrlInput.value = state.baseUrl || "";
+        } catch {}
+      };
+
+      const saveState = () => {
+        localStorage.setItem(KEY, JSON.stringify({
+          armed,
+          lastAlertId,
+          baseUrl: baseUrlInput.value.trim()
+        }));
+      };
+
+      const apiBase = () => {
+        const v = baseUrlInput.value.trim();
+        return v || window.location.origin;
+      };
+
+      const uiArmed = () => {
+        statusPill.textContent = armed ? "Armed" : "Disarmed";
+        statusPill.style.borderColor = armed ? "#2aa56f" : "#566889";
+        statusPill.style.color = armed ? "#8ce9b7" : "#d9e2f3";
+      };
+
+      const startAlarm = () => {
+        alarmLight.classList.add("flash");
+        if (navigator.vibrate) {
+          navigator.vibrate([500, 200, 500, 200, 900]);
+          alarmTimer = setInterval(() => navigator.vibrate([500, 200, 500, 200, 900]), 2300);
+        }
+        try {
+          audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+          if (audioCtx.state === "suspended") audioCtx.resume();
+          osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = "square";
+          osc.frequency.value = 820;
+          gain.gain.value = 0.04;
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+        } catch {}
+      };
+
+      const stopAlarm = () => {
+        alarmLight.classList.remove("flash");
+        if (alarmTimer) {
+          clearInterval(alarmTimer);
+          alarmTimer = null;
+        }
+        if (navigator.vibrate) navigator.vibrate(0);
+        try {
+          if (osc) {
+            osc.stop();
+            osc.disconnect();
+            osc = null;
+          }
+        } catch {}
+      };
+
+      const showAlert = (a) => {
+        activeAlert = a;
+        alertCard.style.display = "block";
+        alertTitle.textContent = `[${a.severity.toUpperCase()}] ${a.title}`;
+        alertMessage.textContent = a.message;
+        alertMeta.textContent = `${a.location || "Unknown location"} | ${new Date(a.created_at).toLocaleString()}`;
+        systemStatus.textContent = "Critical alert received. Alarm active until acknowledgement.";
+        startAlarm();
+      };
+
+      const clearAlert = () => {
+        activeAlert = null;
+        alertCard.style.display = "none";
+        stopAlarm();
+      };
+
+      const poll = async () => {
+        if (!armed) return;
+        try {
+          const params = new URLSearchParams();
+          if (lastAlertId) params.set("since_id", lastAlertId);
+          params.set("unacked_only", "true");
+          const res = await fetch(`${apiBase()}/api/alerts?${params.toString()}`);
+          if (!res.ok) return;
+          const data = await res.json();
+          const items = data.items || [];
+          if (items.length > 0) {
+            const latest = items[items.length - 1];
+            lastAlertId = latest.id;
+            saveState();
+            if (latest.severity === "critical" || latest.severity === "high") {
+              showAlert(latest);
+            }
+          }
+        } catch {}
+      };
+
+      const startPolling = () => {
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = setInterval(poll, 4000);
+        poll();
+      };
+
+      armBtn.addEventListener("click", async () => {
+        armed = true;
+        try {
+          audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+          if (audioCtx.state === "suspended") await audioCtx.resume();
+        } catch {}
+        uiArmed();
+        saveState();
+        startPolling();
+        systemStatus.textContent = "Armed. Polling for critical alerts every 4 seconds.";
+      });
+
+      disarmBtn.addEventListener("click", () => {
+        armed = false;
+        uiArmed();
+        saveState();
+        if (pollTimer) clearInterval(pollTimer);
+        clearAlert();
+        systemStatus.textContent = "Disarmed. Alerts will not trigger vibration/audio.";
+      });
+
+      ackBtn.addEventListener("click", async () => {
+        if (!activeAlert) return;
+        try {
+          await fetch(`${apiBase()}/api/alerts/${activeAlert.id}/ack`, { method: "POST" });
+        } catch {}
+        clearAlert();
+        systemStatus.textContent = "Alert acknowledged.";
+      });
+
+      saveBaseBtn.addEventListener("click", () => {
+        saveState();
+        baseMsg.textContent = "Base URL saved.";
+      });
+
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+      }
+
+      loadState();
+      uiArmed();
+      if (armed) startPolling();
+      systemStatus.textContent = armed ? "Armed. Polling for critical alerts every 4 seconds." : "Waiting for arming.";
+    </script>
+  </body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "name": "RescueLoop Companion",
+  "short_name": "RescueLoop",
+  "start_url": "/companion",
+  "display": "standalone",
+  "background_color": "#10161f",
+  "theme_color": "#d6452f",
+  "description": "Critical disaster alerts with vibration and acknowledgment workflow."
+}

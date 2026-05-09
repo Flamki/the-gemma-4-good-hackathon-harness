@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>RescueLoop - Field Command Board</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;700;800&family=Manrope:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -496,6 +497,26 @@
               </article>
             </div>
 
+            <article class="info-card info" style="margin-top:10px;">
+              <h3>Companion App Alert Dispatch</h3>
+              <label for="alertTitleInput">Alert title</label>
+              <input id="alertTitleInput" value="Immediate Safety Alert" />
+              <label for="alertMessageInput">Alert message</label>
+              <textarea id="alertMessageInput" placeholder="Critical instruction for companion devices..."></textarea>
+              <label for="alertSeverityInput">Alert severity</label>
+              <select id="alertSeverityInput">
+                <option value="critical">Critical</option>
+                <option value="high" selected>High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+              <div class="button-row">
+                <button id="dispatchAlertBtn" class="btn-muted">Dispatch App Alert</button>
+                <button id="openCompanionBtn" class="btn-muted">Open Companion</button>
+              </div>
+              <p id="dispatchStatus" class="statusline"></p>
+            </article>
+
             <article class="info-card" style="margin-top:10px;">
               <h3>Outbox (Store-and-Forward)</h3>
               <div class="button-row">
@@ -524,6 +545,12 @@
       const smsStatus = document.getElementById("smsStatus");
       const outboxList = document.getElementById("outbox");
       const connectivityReady = document.getElementById("connectivityReady");
+      const dispatchAlertBtn = document.getElementById("dispatchAlertBtn");
+      const openCompanionBtn = document.getElementById("openCompanionBtn");
+      const alertTitleInput = document.getElementById("alertTitleInput");
+      const alertMessageInput = document.getElementById("alertMessageInput");
+      const alertSeverityInput = document.getElementById("alertSeverityInput");
+      const dispatchStatus = document.getElementById("dispatchStatus");
       const OUTBOX_KEY = "rescueloop_outbox_v1";
       const THEME_KEY = "rescueloop_theme_v1";
       const themeButtons = Array.from(document.querySelectorAll("[data-theme-btn]"));
@@ -629,6 +656,9 @@
           document.getElementById("sms").value = data.sms_alert || "";
           document.getElementById("deliveryNote").textContent = data.message_delivery_note || "";
           document.getElementById("resources").textContent = JSON.stringify(data.resource_packet || {}, null, 2);
+          alertMessageInput.value = data.first_15_min && data.first_15_min.length
+            ? `${data.summary}\nImmediate actions: ${data.first_15_min.slice(0, 3).join(" | ")}`
+            : data.summary || "";
           setList("first15", data.first_15_min);
           setList("next24", data.next_24h);
           setList("donot", data.do_not);
@@ -745,11 +775,48 @@
         smsStatus.textContent = "Sent messages cleared from outbox.";
       });
 
+      dispatchAlertBtn.addEventListener("click", async () => {
+        const title = alertTitleInput.value.trim();
+        const message = alertMessageInput.value.trim();
+        const severity = alertSeverityInput.value;
+        const location = document.getElementById("location").value.trim();
+        if (!title || !message) {
+          dispatchStatus.textContent = "Add both alert title and message.";
+          return;
+        }
+        dispatchStatus.textContent = "Dispatching alert...";
+        try {
+          const res = await fetch("/api/alerts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title,
+              message,
+              severity,
+              location,
+              source: "command-center"
+            })
+          });
+          if (!res.ok) throw new Error("Alert dispatch failed");
+          const data = await res.json();
+          dispatchStatus.textContent = `Alert dispatched (${data.severity}) at ${new Date(data.created_at).toLocaleTimeString()}.`;
+        } catch (e) {
+          dispatchStatus.textContent = "Failed to dispatch alert.";
+        }
+      });
+
+      openCompanionBtn.addEventListener("click", () => {
+        window.open("/companion", "_blank");
+      });
+
       themeButtons.forEach((btn) => {
         btn.addEventListener("click", () => setTheme(btn.dataset.themeBtn));
       });
 
       loadTheme();
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+      }
       renderOutbox();
     </script>
   </body>

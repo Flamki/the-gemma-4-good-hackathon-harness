@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import os
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -70,6 +72,7 @@ sms_sender = SmsSender(
     twilio_from_number=TWILIO_FROM_NUMBER,
     timeout_seconds=REQUEST_TIMEOUT_SECONDS,
 )
+alert_store: list[dict[str, Any]] = []
 
 
 class PlanRequest(BaseModel):
@@ -107,6 +110,29 @@ class SmsSendResponse(BaseModel):
     message: str
     provider_message_id: str | None = None
     error: str | None = None
+
+
+class AlertCreateRequest(BaseModel):
+    title: str = Field(..., min_length=3, max_length=120)
+    message: str = Field(..., min_length=3, max_length=600)
+    severity: str = Field(default="high", min_length=3, max_length=20)
+    location: str = Field(default="", max_length=120)
+    source: str = Field(default="command-center", max_length=60)
+
+
+class AlertRecord(BaseModel):
+    id: str
+    title: str
+    message: str
+    severity: str
+    location: str
+    source: str
+    created_at: str
+    acknowledged: bool
+
+
+class AlertListResponse(BaseModel):
+    items: list[AlertRecord]
 
 
 def _tool_runner(name: str, args: dict[str, Any]) -> Any:
@@ -304,9 +330,40 @@ def _load_scenarios() -> list[dict[str, Any]]:
     return []
 
 
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _normalize_severity(value: str) -> str:
+    v = value.lower().strip()
+    if v in {"critical", "high", "medium", "low"}:
+        return v
+    return "high"
+
+
+def _prune_alert_store(max_items: int = 200) -> None:
+    if len(alert_store) > max_items:
+        del alert_store[: len(alert_store) - max_items]
+
+
 @app.get("/")
 def index() -> FileResponse:
     return FileResponse(STATIC_DIR / "index.html")
+
+
+@app.get("/companion")
+def companion() -> FileResponse:
+    return FileResponse(STATIC_DIR / "companion.html")
+
+
+@app.get("/manifest.webmanifest")
+def manifest() -> FileResponse:
+    return FileResponse(STATIC_DIR / "manifest.webmanifest", media_type="application/manifest+json")
+
+
+@app.get("/service-worker.js")
+def service_worker() -> FileResponse:
+    return FileResponse(STATIC_DIR / "service-worker.js", media_type="application/javascript")
 
 
 @app.get("/health")
@@ -321,6 +378,7 @@ def health() -> dict[str, Any]:
         "hf_model": HF_MODEL,
         "sms_provider": SMS_PROVIDER,
         "sms_configured": sms_sender.is_configured(),
+        "active_alerts": sum(1 for x in alert_store if not x.get("acknowledged", False)),
         "knowledge_records": len(knowledge_records),
         "scenario_count": len(_load_scenarios()),
     }
@@ -340,6 +398,55 @@ def send_sms(request: SmsSendRequest) -> SmsSendResponse:
         message=result.message,
         provider_message_id=result.provider_message_id,
         error=result.error,
+    )
+
+
+@app.post("/api/alerts", response_model=AlertRecord)
+def create_alert(request: AlertCreateRequest) -> AlertRecord:
+    item = {
+        "id": str(uuid.uuid4()),
+        "title": request.title.strip(),
+        "message": request.message.strip(),
+        "severity": _normalize_severity(request.severity),
+        "location": request.location.strip(),
+        "source": request.source.strip() or "command-center",
+        "created_at": _now_iso(),
+        "acknowledged": False,
+    }
+    alert_store.append(item)
+    _prune_alert_store()
+    return AlertRecord(**item)
+
+
+@app.get("/api/alerts", response_model=AlertListResponse)
+def list_alerts(since_id: str | None = None, unacked_only: bool = True, limit: int = 50) -> AlertListResponse:
+    items = alert_store
+    if since_id:
+        idx = next((i for i, x in enumerate(items) if x["id"] == since_id), -1)
+        if idx >= 0:
+            items = items[idx + 1 :]
+    if unacked_only:
+        items = [x for x in items if not x.get("acknowledged", False)]
+    items = items[-max(1, min(limit, 200)) :]
+    return AlertListResponse(items=[AlertRecord(**x) for x in items])
+
+
+@app.post("/api/alerts/{alert_id}/ack", response_model=AlertRecord)
+def acknowledge_alert(alert_id: str) -> AlertRecord:
+    for item in alert_store:
+        if item["id"] == alert_id:
+            item["acknowledged"] = True
+            return AlertRecord(**item)
+    # Return a lightweight not-found record-like response to keep client flow simple.
+    return AlertRecord(
+        id=alert_id,
+        title="Not found",
+        message="Alert no longer available.",
+        severity="low",
+        location="",
+        source="system",
+        created_at=_now_iso(),
+        acknowledged=True,
     )
 
 
